@@ -1,0 +1,33 @@
+__OA_Analysis_To_Do__
+
+_/ = completed
+* = working idea
+
+#### Things to export from original dataframe to fin dataframe (with index) ####
+ year [45], publisher [36], author [2], reprint_address[24] _/
+ 
+#### Things to add to fin dataframe ####
+ impact factor quantiles _/
+ author count _/
+ origin of publication (corresponding author) _/
+ 
+#### Things to manually add to metadata ####
+ impact factor _/
+ *hybrid_convert 
+ grant/funding
+ journal country
+ 
+###### Statistical model notes #######
+ add random variable of journal 
+ add nesting factor for journal in research field
+ 
+ to include as fixed effects in model testing: 
+  pub year, # of number, field, impact quantile, 
+  publisher, *grant dollars(per field; PH?), 
+  author country, journal country
+ 
+#### Plotting notes ####
+  summarizing data for OA vs Closed to make figures for:
+  *mean difference in total cite count with factors [JIF, field rank, # authors]
+  *heatmap of citations overlaying world map for location data
+  
