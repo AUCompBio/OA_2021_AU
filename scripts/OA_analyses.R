@@ -172,7 +172,7 @@ data_summary <- function (datum) {
 
 # violin plot: Citations by Access Designation
 vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
-  geom_violin(trim=FALSE)
+  geom_violin(trim=FALSE) 
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
@@ -186,6 +186,14 @@ vplot + annotate(geom="text", x="Bronze", y=-4.75, label = Bronss)+
 ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
-# plot: Citation by Impact Factor
+# violin plot: Citations by Access Designation for each field
 
-citimp <- plot(clean_citations ~ Impact_Factor_2019, data = datum)
+vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+  geom_violin(trim=FALSE) +
+  facet_wrap(~ Research_Field)
+vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+  xlab("Status") + ylab("Citations") + 
+  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+  stat_summary(fun.data=data_summary)
+
+ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
