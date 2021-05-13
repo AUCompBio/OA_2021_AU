@@ -1,0 +1,8 @@
+[1] "Mean(SD) Other Gold Citations = 16.81(9.3)"
+[1] "Sample Size = 19358"
+[1] "Mean(SD) non OA Citations = 10.95(8.43)"
+[1] "Sample Size = 66047"
+[1] "Mean(SD) Green Citations = 13.74(9.03)"
+[1] "Sample Size = 10040"
+[1] "Mean(SD) Bronze Citations = 17.46(9.06)"
+[1] "Sample Size = 60307"
