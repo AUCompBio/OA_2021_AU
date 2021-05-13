@@ -16,87 +16,16 @@ rm(list=ls(all.names=TRUE))
 
 # install.packages('ggplot2') # run once
 library(ggplot2)
-# install.packages('plyr') # run once
-library(plyr)
-# install.packages('readxl') # run once
-library(readxl)
 # install.packages('tidyverse') # run once
 library(tidyverse)
 
-# list/save dir names in curr dir
-dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
+datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
-# create empty dataframe
-datum = data.frame()
-
-# loop thru 'dirnames', import files, append to 'datum'
-ptm <- proc.time() #Start time
-for (dir in dirnames) {
-  templist = list.files(path=dir, pattern='/*.xls')
-  tempdatum = ldply(paste(dir,templist,sep='/'), read_excel)
-  datum = rbind(datum, tempdatum)
-}
-
-proc.time() - ptm #Time elapsed
-
-# check raw data
+# check data
 names(datum)
 head(datum)
 summary(datum)
 
-# Exporting journal names to a csv for validation and matching
-journals <- data.frame(unique(datum$`Source Title`))
-write_csv(journals, file = "output/tables/jourlist.csv")
-
-# Clean up =====================
-# 1. rename cols
-# 2. drop unneeded cols
-# 3. create new cols
-# 4. clean names
-
-# 1. rename cols
-names(datum)[names(datum)=='Source Title'] = 'journal'
-names(datum)[names(datum)=='Times Cited, All Databases'] = 'citations'
-names(datum)[names(datum)=='Open Access Designations'] = 'OAdes'
-
-# 2. remove unneeded cols
-keep_cols = c('journal','OAdes','citations')
-datum = datum[keep_cols]
-
-# 3a. create new col(s) with univariate outliers corrected
-clean_cols = c('citations') # select cols to correct
-for (col in clean_cols) {
-  var = datum[[col]] # select col
-  quarters = quantile(var,na.rm=TRUE) # determine quartiles
-  IQR = quarters[3]-quarters[2] # .75 quartile - .25 quartile (IQR)
-  var[var>median(var)+(2*IQR)] = median(var)+(2*IQR) # replace values > upp limit
-  var[var<median(var)-(2*IQR)] = median(var)-(2*IQR) # replace values < low limit
-  datum[,paste0("clean_",col)] = var # append col
-  rm(col,IQR,quarters,var)
-}
-
-# 3b. create new col from OA designations (ie OA, Closed, Other)
-datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
-                    'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
-                    ifelse(grepl('Green', datum$OAdes), 'Green',
-                    ifelse(is.na(datum$OAdes), 'Closed Access', 'Error'))))
-
-# 4. clean up journal names
-# Removing excluded journals, making all journal titles uppercase
-datum <- datum %>%  
-  mutate(journal = toupper(journal)) %>% 
-  filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
-                       'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL'))
-# Correcting specific journal name
-datum <- datum %>% 
-  mutate(across(journal,str_replace_all, 
-                pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
-                replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
-
-# 5. adding metadata
-md <- read_csv("data/Clean_JournalImpact.csv", col_names = TRUE)
-md <- md %>% rename(journal = "Selected_Journals")
-datum <- left_join(datum, md, by = "journal")
 
 
 # Summary Stats =================
@@ -145,7 +74,9 @@ print(paste("Sample Size =", Bronss))
 sink()
 
 # Statistical Tests ================
-#  (run lm (anova), export results))
+#
+
+
 
 # lm (anova): test whether OAlab predicts citations
 model = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access"),data=datum, subset = c(OAlab != "Error"))
