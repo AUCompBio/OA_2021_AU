@@ -81,7 +81,7 @@ datum$OAlab = ifelse(grepl('Gold', datum$OAdes),
 # 3c. create new col from authors with count
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
-datum <- datum %>% add_column(auth_loc = str_remove(word(datum$`Reprint Addresses`, -1),"[.]"))
+datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 
 # 4. remove unneeded cols
 datum <- datum %>% select(journal, citations, OAdes,  year, auth_loc, Publisher, auth_count)
