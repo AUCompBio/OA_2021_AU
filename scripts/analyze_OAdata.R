@@ -151,3 +151,16 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
 
 ggsave("clean_vplot_JIF_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
+
+
+# violin plot: Citations by Year Published
+
+vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+  geom_violin(trim=FALSE) +
+  facet_wrap(~year)
+vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+  xlab("Status") + ylab("Citations") + 
+  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+  stat_summary(fun.data=data_summary)
+
+ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
