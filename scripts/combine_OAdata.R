@@ -9,8 +9,8 @@ library(readxl)
 library(tidyverse)
 # install.packages('stringr')
 library(stringr)
-# install.packages('plyr')
-library(plyr)
+# install.packages('readr')
+library(readr)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
@@ -29,8 +29,8 @@ for (dir in dirnames) {
 proc.time() - ptm #Time elapsed
 
 # Exporting journal names to a csv for validation and matching
-journals <- data.frame(unique(datum$`Source Title`))
-write_csv(journals, file = "output/tables/jourlist.csv")
+#journals <- data.frame(unique(datum$`Source Title`))
+#write_csv(journals, file = "output/tables/jourlist.csv")
 
 # Clean up =====================
 # 1. rename cols
@@ -86,12 +86,14 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 
 # 4. remove unneeded cols
-datum <- datum %>% select(journal, citations, OAdes,  year, auth_loc, Publisher, auth_count, OAlab,clean_citations)
+datum <- datum %>% select(journal, citations, clean_citations, OAdes, OAlab, 
+                          year, auth_loc, auth_count)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
 
 # 5a. adding metadata
 md <- read_csv("data/Clean_JournalImpact.csv", col_names = TRUE)
+md <- md %>% rename(jour_loc = journal_address)
 # 5b. adding IF quantiles to metadata and merge to datum data.frame
 IFquant <- quantile(md$IF_5Y_2019)
 IFquant
