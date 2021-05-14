@@ -3,6 +3,9 @@ __OA_Analysis_To_Do__
 _/ = completed
 * = working idea
 
+#### General ####
+ Update readme!
+
 #### Things to export from original dataframe to fin dataframe (with index) ####
  year [45], publisher [36], author [2], reprint_address[24] _/
  
@@ -27,7 +30,7 @@ _/ = completed
   author country, journal country
  
 #### Plotting notes ####
-  summarizing data for OA vs Closed to make figures for:
-  *mean difference in total cite count with factors [JIF, field rank, # authors]
-  *heatmap of citations overlaying world map for location data
+ *summarizing data for OA vs Closed to make figures for:
+   mean difference in total cite count with factors [JIF, field rank, # authors]
+   heatmap of citations overlaying world map for location data
   
