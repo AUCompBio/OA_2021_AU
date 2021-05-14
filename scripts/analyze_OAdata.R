@@ -18,6 +18,10 @@ rm(list=ls(all.names=TRUE))
 library(ggplot2)
 # install.packages('tidyverse') # run once
 library(tidyverse)
+#install.packages('doBy')
+library('doBy')
+#install.packages('reshape2')
+library('reshape2')
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -190,3 +194,23 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   stat_summary(fun.data=data_summary)
 
 ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+
+
+
+fun <- function(x){
+  c(m=mean(x), v=var(x), n=length(x))
+}
+
+#use doBy and reshape2 packages to summarize data by Author Country of Origin
+als=summaryBy(clean_citations~auth_loc+OAlab, data=datum,FUN=fun)
+
+#reshape data to have column for each type of access
+a_coo=dcast(als,auth_loc~OAlab,value.var="clean_citations.m")
+
+#calculate difference in citations from open to closed
+a_coo$cit_diff=mean(c(a_coo$`Other Gold`,a_coo$Green,a_coo$Bronze),na.rm=T)-a_coo$`Closed Access`
+
+#summarize # citations increase due to Open Access
+hist(a_coo$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
+summary(a_coo$cit_diff)
