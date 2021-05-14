@@ -9,6 +9,8 @@ library(readxl)
 library(tidyverse)
 # install.packages('stringr')
 library(stringr)
+# install.packages('plyr')
+library(plyr)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
