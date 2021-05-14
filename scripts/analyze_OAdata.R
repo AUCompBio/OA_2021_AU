@@ -37,6 +37,15 @@ sink("outputs/stats/recordnum_journal.txt")
 summary(datum$journal) # print number
 sink()
 
+#print range of records by journal
+range(summary(datum$journal))
+
+#number of journals
+length(unique(sort(datum$journal)))
+
+#number of field
+length(unique(sort(datum$field)))
+
 # summary stats: other gold 
 OG = subset(datum,OAlab=='Other Gold') # subset data to other gold
 OGss = length(OG$journal)
