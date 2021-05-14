@@ -86,7 +86,7 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 
 # 4. remove unneeded cols
-datum <- datum %>% select(journal, citations, OAdes,  year, auth_loc, Publisher, auth_count, OAlab)
+datum <- datum %>% select(journal, citations, OAdes,  year, auth_loc, Publisher, auth_count, OAlab,clean_citations)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
 
