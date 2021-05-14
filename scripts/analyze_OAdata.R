@@ -18,6 +18,10 @@ rm(list=ls(all.names=TRUE))
 library(ggplot2)
 # install.packages('tidyverse') # run once
 library(tidyverse)
+#install.packages('doBy')
+library('doBy')
+#install.packages('reshape2')
+library('reshape2')
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -190,3 +194,32 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   stat_summary(fun.data=data_summary)
 
 ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+
+
+
+fun <- function(x){
+  c(m=mean(x), v=var(x), n=length(x))
+}
+
+#use doBy and reshape2 packages to summarize data by Author Country of Origin
+als=summaryBy(clean_citations~auth_loc+OAlab, data=datum,FUN=fun)
+
+#reshape data to have column for each type of access
+a_coo=dcast(als,auth_loc~OAlab,value.var="clean_citations.m")
+
+#tally total records per country
+a_coo2=dcast(als,auth_loc~OAlab,value.var="clean_citations.n")
+a_coo2$total_cit=a_coo2$Bronze+a_coo2$`Closed Access`+a_coo2$Green+a_coo2$`Other Gold`
+
+#merge citation count with mean citations
+a_coo_merged=cbind(a_coo,a_coo2$total_cit)
+
+#calculate difference in citations from open to closed
+a_coo_merged$cit_diff=ifelse(is.na(a_coo_merged$`a_coo2$total_cit`),NA,((a_coo_merged$`Other Gold`+a_coo_merged$Green+a_coo_merged$Bronze)/3)-a_coo_merged$`Closed Access`)
+
+#summarize # citations increase due to Open Access
+hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
+summary(a_coo_merged$cit_diff)
+
+#note: would love to make a map with these values presented as a heat map!
