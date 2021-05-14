@@ -6,20 +6,23 @@ _/ = completed
 #### General ####
  Update readme!
 
-#### Things to export from original dataframe to fin dataframe (with index) ####
- year [45], publisher [36], author [2], reprint_address[24] _/
+#### Data Wrangling/Clean UP ####
+Things to export from original dataframe to fin dataframe (with index):
+ year [45], author [2], reprint_address[24] _/
  
-#### Things to add to fin dataframe ####
+Things to edit for fin dataframe:
  impact factor quantiles _/
  author count _/
  origin of publication (corresponding author) _/
- 
-#### Things to manually add to metadata ####
+ exclude data that is from Zebrafish & published in 2019
+Things to manually add to metadata:
  impact factor _/
  *hybrid_convert 
  grant/funding
- journal country
+ journal country _/
+ publisher
  
+
 ###### Statistical model notes #######
  add random variable of journal 
  add nesting factor for journal in research field
@@ -27,7 +30,8 @@ _/ = completed
  to include as fixed effects in model testing: 
   pub year, # of number, field, impact quantile, 
   publisher, *grant dollars(per field; PH?), 
-  author country, journal country
+  author country, journal country, 
+  * mean/median h-index of associate prof per field
  
 #### Plotting notes ####
  *summarizing data for OA vs Closed to make figures for:
