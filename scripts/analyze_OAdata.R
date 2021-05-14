@@ -177,3 +177,16 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   stat_summary(fun.data=data_summary)
 
 ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+
+# violin plot: Citations by Corresponding Author Country of Origin
+
+vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+  geom_violin(trim=FALSE) +
+  facet_wrap(~auth_loc)
+vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+  xlab("Status") + ylab("Citations") + 
+  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+  stat_summary(fun.data=data_summary)
+
+ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
