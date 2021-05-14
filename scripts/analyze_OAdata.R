@@ -208,9 +208,18 @@ als=summaryBy(clean_citations~auth_loc+OAlab, data=datum,FUN=fun)
 #reshape data to have column for each type of access
 a_coo=dcast(als,auth_loc~OAlab,value.var="clean_citations.m")
 
+#tally total records per country
+a_coo2=dcast(als,auth_loc~OAlab,value.var="clean_citations.n")
+a_coo2$total_cit=a_coo2$Bronze+a_coo2$`Closed Access`+a_coo2$Green+a_coo2$`Other Gold`
+
+#merge citation count with mean citations
+a_coo_merged=cbind(a_coo,a_coo2$total_cit)
+
 #calculate difference in citations from open to closed
-a_coo$cit_diff=mean(c(a_coo$`Other Gold`,a_coo$Green,a_coo$Bronze),na.rm=T)-a_coo$`Closed Access`
+a_coo_merged$cit_diff=ifelse(is.na(a_coo_merged$`a_coo2$total_cit`),NA,((a_coo_merged$`Other Gold`+a_coo_merged$Green+a_coo_merged$Bronze)/3)-a_coo_merged$`Closed Access`)
 
 #summarize # citations increase due to Open Access
-hist(a_coo$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
-summary(a_coo$cit_diff)
+hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
+summary(a_coo_merged$cit_diff)
+
+#note: would love to make a map with these values presented as a heat map!
