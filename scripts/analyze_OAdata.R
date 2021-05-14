@@ -130,7 +130,7 @@ ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,
 
 vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
   geom_violin(trim=FALSE) +
-  facet_wrap(~ Research_Field)
+  facet_wrap(~field)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
