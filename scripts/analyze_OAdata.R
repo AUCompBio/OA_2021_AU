@@ -22,6 +22,8 @@ library(tidyverse)
 library('doBy')
 #install.packages('reshape2')
 library('reshape2')
+#install.packages('maptools')
+library(maptools)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -213,18 +215,21 @@ a_coo2=dcast(als,auth_loc~OAlab,value.var="clean_citations.n")
 a_coo2$total_cit=a_coo2$Bronze+a_coo2$`Closed Access`+a_coo2$Green+a_coo2$`Other Gold`
 
 #merge citation count with mean citations
-a_coo_merged=cbind(a_coo,a_coo2$total_cit)
+a_coo_merged=cbind(a_coo,a_coo2[,2:6])
+colnames(a_coo_merged)=c("auth_loc","Bronze mean cit","Closed Access mean cit","Green mean cit","Other gold mean cit","Bronze total records","Closed Access total records","Green total records","Other Gold total records","total records")
 
 #calculate difference in citations from open to closed
-a_coo_merged$cit_diff=ifelse(is.na(a_coo_merged$`a_coo2$total_cit`),NA,((a_coo_merged$`Other Gold`+a_coo_merged$Green+a_coo_merged$Bronze)/3)-a_coo_merged$`Closed Access`)
+a_coo_merged$bronze_cit_diff=ifelse(is.na(a_coo_merged$`Bronze total records`),NA,a_coo_merged$`Bronze mean cit`-a_coo_merged$`Closed Access mean cit`)
+a_coo_merged$green_cit_diff=ifelse(is.na(a_coo_merged$`Green total records`),NA,a_coo_merged$`Green mean cit`-a_coo_merged$`Closed Access mean cit`)
+a_coo_merged$gold_cit_diff=ifelse(is.na(a_coo_merged$`Other Gold total records`),NA,a_coo_merged$`Other gold mean cit`-a_coo_merged$`Closed Access mean cit`)
+a_coo_merged$cit_diff=ifelse(is.na(a_coo_merged$`total records`),NA,((a_coo_merged$`Other gold mean cit`+a_coo_merged$`Green mean cit`+a_coo_merged$`Bronze mean cit`)/3)-a_coo_merged$`Closed Access mean cit`)
+
 
 #summarize # citations increase due to Open Access
 hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
 summary(a_coo_merged$cit_diff)
 
 #note: would love to make a map with these values presented as a heat map!
-install.packages('maptools')
-library(maptools)
 data(wrld_simpl)
 brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
 a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
