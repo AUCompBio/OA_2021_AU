@@ -1,0 +1,26 @@
+{
+    "id": "532C9349",
+    "path": "~/Documents/OA_2021_AU/scripts/analyze_OAdata.R",
+    "project_path": "scripts/analyze_OAdata.R",
+    "type": "r_source",
+    "hash": "2462565228",
+    "contents": "",
+    "dirty": false,
+    "created": 1621213875936.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "238,9",
+        "scrollLine": "220"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1621213885,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1621213885579,
+    "read_only": false,
+    "read_only_alternatives": []
+}
