@@ -223,3 +223,17 @@ hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access
 summary(a_coo_merged$cit_diff)
 
 #note: would love to make a map with these values presented as a heat map!
+install.packages('maptools')
+library(maptools)
+data(wrld_simpl)
+brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
+a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
+colours=c("#cb181d","#fb6a4a","#fcae91","#fee5d9")
+a_coo_merged$colors=as.character(cut(a_coo_merged$cit_diff,breaks=brks,labels=colours,include.lowest=T))
+
+myCountries = wrld_simpl@data$NAME %in% a_coo_merged$auth_loc
+png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
+plot(wrld_simpl, col = a_coo_merged$colors[myCountries])
+legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
+       fill=colours, bty="n",cex=1.5)
+dev.off()
