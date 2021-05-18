@@ -144,6 +144,10 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
 
 ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
+#further delving into the research fields
+#downloaded from InCites
+fields=read.csv(file="data/Incites Research Areas.csv",header=T)
+fields=fields[1:12,]
 
 # violin plot: Citations by Journal Impact Factor (JIF) quantile
 
