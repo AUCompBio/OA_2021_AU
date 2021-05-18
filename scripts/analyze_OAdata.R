@@ -146,8 +146,42 @@ ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", wi
 
 #further delving into the research fields
 #downloaded from InCites
-fields=read.csv(file="data/Incites Research Areas.csv",header=T)
-fields=fields[1:12,]
+fields=read.csv(file="data/Incites Research Areas Report Updated.csv",header=T,stringsAsFactors = T)
+#fields=fields[1:14,]
+
+fun <- function(x){
+  c(m=mean(x), v=var(x), n=length(x))
+}
+
+#use doBy and reshape2 packages to summarize data by Author Country of Origin
+rfs=summaryBy(clean_citations~field+OAlab, data=datum,FUN=fun)
+
+#reshape data to have mean citation count for each type of access
+rf_mean=dcast(rfs,field~OAlab,value.var="clean_citations.m")
+
+#tally total records per country
+rf_total=dcast(rfs,field~OAlab,value.var="clean_citations.n")
+rf_total$total_cit=rf_total$Bronze+rf_total$`Closed Access`+rf_total$Green+rf_total$`Other Gold`
+
+#merge citation count with mean citations
+rf_combined=cbind(rf_mean,rf_total[,2:6])
+colnames(rf_combined)=c("field","Bronze mean cit","Closed Access mean cit","Green mean cit","Other gold mean cit","Bronze total records","Closed Access total records","Green total records","Other Gold total records","total records")
+rf_merged=merge(rf_combined,fields,by.x="field",by.y="Name")
+
+#calculate difference in citations from open to closed
+rf_merged$bronze_cit_diff=ifelse(is.na(rf_merged$`Bronze total records`),NA,rf_merged$`Bronze mean cit`-rf_merged$`Closed Access mean cit`)
+rf_merged$green_cit_diff=ifelse(is.na(rf_merged$`Green total records`),NA,rf_merged$`Green mean cit`-rf_merged$`Closed Access mean cit`)
+rf_merged$gold_cit_diff=ifelse(is.na(rf_merged$`Other Gold total records`),NA,rf_merged$`Other gold mean cit`-rf_merged$`Closed Access mean cit`)
+rf_merged$cit_diff=ifelse(is.na(rf_merged$`total records`),NA,((rf_merged$`Other gold mean cit`+rf_merged$`Green mean cit`+rf_merged$`Bronze mean cit`)/3)-rf_merged$`Closed Access mean cit`)
+
+#plot cit diff versus field rank
+png(filename="outputs/plots/fieldRank_vs_cit_diff.png",width=8,height=8,res=300,pointsize=9,units="in")
+par(mfrow=c(2,2)) 
+plot(rf_merged$Rank,rf_merged$cit_diff,main="Research Field Rank vs. OA Cit Difference (Overall)",xlab="Research Field Rank",ylab="All OA vs CA citation # diff",pch=16)
+plot(rf_merged$Rank,rf_merged$bronze_cit_diff,main="Research Field Rank vs. Bronze OA Cit Difference",xlab="Research Field Rank",ylab="Bronze OA vs CA citation # diff",pch=16)
+plot(rf_merged$Rank,rf_merged$green_cit_diff,main="Research Field Rank vs. Green OA Cit Difference",xlab="Research Field Rank",ylab="Green OA vs CA citation # diff",pch=16)
+plot(rf_merged$Rank,rf_merged$gold_cit_diff,main="Research Field Rank vs. Other Gold OA Cit Difference",xlab="Research Field Rank",ylab="Other Gold OA vs CA citation # diff",pch=16)
+dev.off()
 
 # violin plot: Citations by Journal Impact Factor (JIF) quantile
 
