@@ -146,7 +146,7 @@ ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", wi
 
 #further delving into the research fields
 #downloaded from InCites
-fields=read.csv(file="data/Incites Research Areas Report Updated.csv",header=T,stringsAsFactors = T)
+fields=read.csv(file="data/Incites Research Areas Report Updated.csv",header=T)
 #fields=fields[1:14,]
 
 fun <- function(x){
@@ -166,6 +166,7 @@ rf_total$total_cit=rf_total$Bronze+rf_total$`Closed Access`+rf_total$Green+rf_to
 #merge citation count with mean citations
 rf_combined=cbind(rf_mean,rf_total[,2:6])
 colnames(rf_combined)=c("field","Bronze mean cit","Closed Access mean cit","Green mean cit","Other gold mean cit","Bronze total records","Closed Access total records","Green total records","Other Gold total records","total records")
+rf_combined$field[1]="Biochemistry"
 rf_merged=merge(rf_combined,fields,by.x="field",by.y="Name")
 
 #calculate difference in citations from open to closed
