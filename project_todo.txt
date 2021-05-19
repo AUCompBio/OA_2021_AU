@@ -21,6 +21,7 @@ Things to manually add to metadata:
  grant/funding
  journal country _/
  publisher
+ *Decide on minimum number of records per author country of origin
  
 
 ###### Statistical model notes #######
