@@ -3,6 +3,8 @@
 # clear workspace
 rm(list=ls(all.names=TRUE))
 
+# install.packages('plyr') # run once
+library(plyr)
 # install.packages('readxl') # run once
 library(readxl)
 # install.packages('tidyverse') # run once
@@ -15,22 +17,75 @@ library(readr)
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
 
-# create empty dataframe
-datum = data.frame()
+# create empty list
+datumlist = list()
 
 # loop thru 'dirnames', import files, append to 'datum'
 ptm <- proc.time() #Start time
 for (dir in dirnames) {
   templist = list.files(path=dir, pattern='/*.xls')
   tempdatum = ldply(paste(dir,templist,sep='/'), read_excel)
-  datum = rbind(datum, tempdatum)
+  datumlist = append(datumlist, list(tempdatum))
 }
-
+datum <- as.data.frame(rbindlist(datumlist))
+# Replacing NA with blanks for OA column (necessary for matching)
+datum$`Open Access Designations`= replace_na(datum$`Open Access Designations`, "")
 proc.time() - ptm #Time elapsed
 
 # Exporting journal names to a csv for validation and matching
 #journals <- data.frame(unique(datum$`Source Title`))
 #write_csv(journals, file = "output/tables/jourlist.csv")
+
+# OA/CA Matched Issues =========
+# Functions and subsequent code to produce OA/CA matched issues dataframe
+
+## Function that takes grouped data.frames and checks for the presence of both target OA designation patterns in each group
+matchbytibble <- function(tibs) {
+  # OA designation patterns needed to match; using grep so regex should work 
+  patt <- c("^$", "Other Gold")
+  # Check for Other Gold in the designation field
+  ckgold <- any(grepl(patt[[2]],tibs$`Open Access Designations`))
+  # Check for blanks in the designation field
+  ckblank <- any(grepl(patt[[1]],tibs$`Open Access Designations`))
+  
+  # If ckgold & ckblank evaluate at TRUE...else...
+  if (ckgold == TRUE && ckblank == TRUE) {
+    # add tib in list form to matched list of data.tables
+    matchlist <<- append(matchlist, list(tibs)) 
+    print("Both subscription (blank) and Other Gold designations are found in this issue. Writing to matched dataframe...")
+  } else {
+    print("Subscription (blank) and/or Other Gold designations were not found in this issue. Omitting this issue from the matched dataframe.")
+  }
+}
+
+
+## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
+splitbyjournal <- function(journal) {
+  # OA designation patterns needed to match; using grep so regex should work 
+  patt <- c("^$", "Other Gold")
+  # subset single journal in dataset
+  sjournal <- datum %>% filter(`Source Title` == journal)
+  # Filtering for target OA designations in a single journal
+  fsjournal <- sjournal %>% 
+    filter(grepl(paste(patt, collapse = "|"), `Open Access Designations`))
+  # Intersection of Volume-Issue combinations that had either target OA designation. 
+  sectjournal <- sjournal %>% 
+    semi_join(fsjournal, by =c("Volume", "Issue"))
+  # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
+  sectjournal %>% 
+    group_split(Volume,Issue) %>% 
+    map(~ matchbytibble(.x))
+}
+
+# Initializing empty list
+matchlist <- list()
+# Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
+jnames <- unique(datum$`Source Title`)
+# Apply splitbyjournal and subsequent matchbytibble functions
+sapply(jnames, splitbyjournal)
+
+# Convert list of lists to data.frame
+matched <- as.data.frame(rbindlist(matchlist))
 
 # Clean up =====================
 # 1. rename cols
@@ -44,6 +99,11 @@ datum <- datum %>% rename(journal = 'Source Title',
          citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
          year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
+matched <- matched %>% rename(journal = 'Source Title',
+                          citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
+                          year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
+
+
 #names(datum)[names(datum)=='Source Title'] = 'journal'
 #names(datum)[names(datum)=='Times Cited, All Databases'] = 'citations'
 #names(datum)[names(datum)=='Open Access Designations'] = 'OAdes'
@@ -55,6 +115,7 @@ datum <- datum %>% rename(journal = 'Source Title',
 datum <- datum %>%  
   mutate(journal = toupper(journal)) %>% 
   filter(is.na(`Special Issue`)) %>% 
+  filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
   filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
                          'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL'))
 # Correcting specific journal name
@@ -62,7 +123,18 @@ datum <- datum %>%
   mutate(across(journal,str_replace_all, 
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
-
+#for matched: Removing excluded journals and special issues; making all journal titles uppercase 
+matched <- matched %>%  
+  mutate(journal = toupper(journal)) %>% 
+  filter(is.na(`Special Issue`)) %>% 
+  filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
+  filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
+                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL'))
+# Correcting specific journal name
+matched <- matched %>% 
+  mutate(across(journal,str_replace_all, 
+                pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
+                replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 
 # 3a. create new col(s) with univariate outliers corrected
 clean_cols = c('citations') # select cols to correct
@@ -85,8 +157,32 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
 datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 
+# for matched: 3a. create new col(s) with univariate outliers corrected
+clean_cols = c('citations') # select cols to correct
+for (col in clean_cols) {
+  var = matched[[col]] # select col
+  quarters = quantile(var,na.rm=TRUE) # determine quartiles
+  IQR = quarters[3]-quarters[2] # .75 quartile - .25 quartile (IQR)
+  var[var>median(var)+(2*IQR)] = median(var)+(2*IQR) # replace values > upp limit
+  var[var<median(var)-(2*IQR)] = median(var)-(2*IQR) # replace values < low limit
+  matched[,paste0("clean_",col)] = var # append col
+  rm(col,IQR,quarters,var)
+}
+# 3b. create new col from OA designations (ie OA, Closed, Other)
+matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
+                     'Other Gold', ifelse(grepl('Bronze', matched$OAdes), 'Bronze',
+                                          ifelse(grepl('Green', matched$OAdes), 'Green',
+                                                 ifelse(grepl('^$', matched$OAdes), 'Closed Access', 'Error'))))
+# 3c. create new col from authors with count
+matched <- matched %>% add_column(auth_count = str_count(matched$Authors, ";") + 1)
+# 3d. create new col from reprint addresses with author country
+matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_loc, -1),"[.]"))
+
 # 4. remove unneeded cols
 datum <- datum %>% select(journal, citations, clean_citations, OAdes, OAlab, 
+                          year, auth_loc, auth_count)
+
+matched <- matched %>% select(journal, citations, clean_citations, OAdes, OAlab, 
                           year, auth_loc, auth_count)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
@@ -102,5 +198,6 @@ md <- md %>% add_column(JIFquant = cut(md$IF_5Y_2019,
                             labels = c("Q1","Q2","Q3","Q4")))
 # 5c. joining metadata with clean data and writing to output file
 datum <- left_join(datum, md, by = "journal")
+matched <- left_join(matched, md, by = "journal")
 write_csv(datum, file = "data/OA_data_fin.csv")
-
+write_csv(matched, file = "data/matched_OA_data_fin.csv")
