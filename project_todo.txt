@@ -14,16 +14,18 @@ Things to edit for fin dataframe:
  impact factor quantiles _/
  author count _/
  origin of publication (corresponding author) _/
- exclude data that is from Zebrafish & published in 2019
+  This is add- but there are still some issues, example: Lanka = Sri Lanka
+ exclude data that is from Zebrafish & published in 2019 _/
+ 
 Things to manually add to metadata:
  impact factor _/
  *hybrid_convert 
  grant/funding
  journal country _/
- publisher
+ publisher _/
  *Decide on minimum number of records per author country of origin
  
-
+Filter by matching OA/CA in Volume_Issue _/ 
 ###### Statistical model notes #######
  add random variable of journal 
  add nesting factor for journal in research field
@@ -37,5 +39,5 @@ Things to manually add to metadata:
 #### Plotting notes ####
  *summarizing data for OA vs Closed to make figures for:
    mean difference in total cite count with factors [JIF, field rank, # authors]
-   heatmap of citations overlaying world map for location data
+   heatmap of citations overlaying world map for location data _/ LSS
   
