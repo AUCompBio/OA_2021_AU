@@ -31,11 +31,13 @@ Filter by matching OA/CA in Volume_Issue _/
  add nesting factor for journal in research field
  
  to include as fixed effects in model testing: 
-  pub year, # of number, field, impact quantile, 
-  publisher, *grant dollars(per field; PH?), 
-  author country, journal country, 
+  pub year _/, # of authors _/, field!, impact factor _/, 
+  publisher _/, *grant dollars(per field; PH?), 
+  author country!, journal country!, 
   * mean/median h-index of associate prof per field
- 
+ -naturally, the categorical variables of field, auth & jour loc are being compared to the first level
+ (will need to recode to compare to the mean- otherwise I don't think we can make meaningful interpretations)
+ -should we also normalize some of these variables?
 #### Plotting notes ####
  *summarizing data for OA vs Closed to make figures for:
    mean difference in total cite count with factors [JIF, field rank, # authors]
