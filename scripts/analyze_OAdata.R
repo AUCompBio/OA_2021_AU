@@ -24,6 +24,10 @@ library('doBy')
 library('reshape2')
 #install.packages('maptools')
 library(maptools)
+#install.packages('nlme')
+library(nlme)
+#install.packages('lme4')
+library(lme4)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -89,15 +93,63 @@ print(paste("Sample Size =", Bronss))
 sink()
 
 # Statistical Tests ================
-#
-
+# Bottom up model selection
 
 
 # lm (anova): test whether OAlab predicts citations
-model = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access"),data=datum, subset = c(OAlab != "Error"))
-anova(model)
-summary(model)
-confint(model)
+m1 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access"),
+        data=datum, subset = c(OAlab != "Error"))
+anova(m1)
+summary(m1)
+confint(m1)
+
+m2 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") + IF_5Y_2019,
+        data=datum, subset = c(OAlab != "Error"))
+anova(m2)
+summary(m2)
+confint(m2)
+
+m3 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year ,data=datum, subset = c(OAlab != "Error"))
+anova(m3)
+summary(m3)
+confint(m3)
+
+m4 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year + field ,data=datum, subset = c(OAlab != "Error"))
+anova(m4)
+summary(m4)
+confint(m4)
+
+m5 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year + field + publisher,data=datum, subset = c(OAlab != "Error"))
+anova(m5)
+summary(m5)
+confint(m5)
+
+m6 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year + field + publisher + auth_count,data=datum, subset = c(OAlab != "Error"))
+anova(m6)
+summary(m6)
+confint(m6)
+
+m7 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year + field + publisher + auth_count + auth_loc,data=datum, subset = c(OAlab != "Error"))
+anova(m7)
+summary(m7)
+confint(m7)
+
+m8 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
+          IF_5Y_2019 + year + field + publisher + auth_count + auth_loc + jour_loc,data=datum, subset = c(OAlab != "Error"))
+anova(m8)
+summary(m8)
+confint(m8)
+
+m9 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") *
+          year + IF_5Y_2019 + field + publisher + auth_count + auth_loc + jour_loc,data=datum, subset = c(OAlab != "Error"))
+anova(m9)
+summary(m9)
+confint(m9)
 
 # export results from anova to .txt file
 sink("clean_results_anova_WOS2.txt")
