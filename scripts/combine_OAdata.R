@@ -13,6 +13,8 @@ library(tidyverse)
 library(stringr)
 # install.packages('readr')
 library(readr)
+# install.packages('data.table')
+library(data.table)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
@@ -96,8 +98,8 @@ matched <- as.data.frame(rbindlist(matchlist))
 
 # 1. rename cols
 datum <- datum %>% rename(journal = 'Source Title',
-         citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
-         year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
+                          citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
+                          year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
 matched <- matched %>% rename(journal = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
@@ -151,7 +153,7 @@ for (col in clean_cols) {
 datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
                                           ifelse(grepl('Green', datum$OAdes), 'Green',
-                                                 ifelse(is.na(datum$OAdes), 'Closed Access', 'Error'))))
+                                                 ifelse(grepl('^$', matched$OAdes), 'Closed Access', 'Error'))))
 # 3c. create new col from authors with count
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
