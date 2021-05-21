@@ -221,6 +221,8 @@ datum$auth_loc[datum$auth_loc=='Cent Afr Republ'] = 'Central African Republic'
 datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
 
 #list countries not in list (should be zero now!)
+myCountries=unique(sort(datum$auth_loc))
+CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
 
 # for matched: 3a. create new col(s) with univariate outliers corrected
