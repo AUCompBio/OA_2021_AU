@@ -15,6 +15,8 @@ library(stringr)
 library(readr)
 # install.packages('data.table')
 library(data.table)
+# install.packages('maptools')
+library(maptools)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
@@ -157,7 +159,69 @@ datum$OAlab = ifelse(grepl('Gold', datum$OAdes),
 # 3c. create new col from authors with count
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
-datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
+#datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
+#datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
+datum$auth_loc=ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]"))
+datum$auth_loc=str_trim(datum$auth_loc, side = "left")
+
+#list all countries
+myCountries=unique(sort(datum$auth_loc))
+
+#match with country list for maptools package
+data("wrld_simpl")
+CountryIntersect = myCountries %in% wrld_simpl@data$NAME
+
+#list countries not in list
+myCountries[CountryIntersect==FALSE]
+
+#correct countries without a match in datafile
+datum$auth_loc[datum$auth_loc=='Zealand'] = 'New Zealand'
+datum$auth_loc[datum$auth_loc=='DEM REP CONGO'] = 'Congo'
+datum$auth_loc[datum$auth_loc=='BELARUS'] = 'Belarus'
+datum$auth_loc[datum$auth_loc=='USA'] = 'United States'
+datum$auth_loc[datum$auth_loc=='Rep Congo'] = 'Congo'
+datum$auth_loc[datum$auth_loc=='Vietnam'] = 'Viet Nam'
+datum$auth_loc[datum$auth_loc=='Wales'] = 'United Kingdom'
+datum$auth_loc[datum$auth_loc=='U Arab Emirates'] = 'United Arab Emirates'
+datum$auth_loc[datum$auth_loc=='Turks & Caicos'] = 'Turks and Caicos Islands'
+datum$auth_loc[datum$auth_loc=='Trinidad Tobago'] = 'Trinidad and Tobago'
+datum$auth_loc[datum$auth_loc=='Tanzania'] = 'United Republic of Tanzania'
+datum$auth_loc[datum$auth_loc=='Syria'] = 'Syrian Arab Republic'
+datum$auth_loc[datum$auth_loc=='St Vincent'] = 'Saint Vincent and the Grenadines'
+datum$auth_loc[datum$auth_loc=='St Kitts & Nevi'] = 'Saint Kitts and Nevis'
+datum$auth_loc[datum$auth_loc=='Scotland'] = 'United Kingdom'
+datum$auth_loc[datum$auth_loc=='Arabia'] = 'Saudi Arabia'
+datum$auth_loc[datum$auth_loc=='Myanmar'] = 'Burma'
+datum$auth_loc[datum$auth_loc=='Laos'] = 'Lao People\'s Democratic Republic'
+datum$auth_loc[datum$auth_loc=='Libya'] = 'Libyan Arab Jamahiriya'
+datum$auth_loc[datum$auth_loc=='Peoples R China'] = 'China'
+datum$auth_loc[datum$auth_loc=='England'] = 'United Kingdom'
+datum$auth_loc[datum$auth_loc=='Papua N Guinea'] = 'Papua New Guinea'
+datum$auth_loc[datum$auth_loc=='Ascension Isl'] = 'United Kingdom'
+datum$auth_loc[datum$auth_loc=='Bonaire'] = 'Netherlands'
+datum$auth_loc[datum$auth_loc=='Bosnia & Herceg'] = 'Bosnia and Herzegovina'
+datum$auth_loc[datum$auth_loc=='Brunei'] = 'Brunei Darussalam'
+datum$auth_loc[datum$auth_loc=='Emirates'] = 'United Arab Emirates'
+datum$auth_loc[datum$auth_loc=='South Korea'] = 'Korea, Republic of'
+datum$auth_loc[datum$auth_loc=='Rica'] = 'Costa Rica'
+datum$auth_loc[datum$auth_loc=='Macedonia'] = 'The former Yugoslav Republic of Macedonia'
+datum$auth_loc[datum$auth_loc=='North Macedonia'] = 'The former Yugoslav Republic of Macedonia'
+datum$auth_loc[datum$auth_loc=='Republic'] = 'Czech Republic'
+datum$auth_loc[datum$auth_loc=='North Ireland'] = 'United Kingdom'
+datum$auth_loc[datum$auth_loc=='Moldova'] = 'Republic of Moldova'
+datum$auth_loc[datum$auth_loc=='Kosovo'] = 'Serbia'
+datum$auth_loc[datum$auth_loc=='Korea'] = 'Korea, Republic of'
+datum$auth_loc[datum$auth_loc=='Iran'] = 'Iran (Islamic Republic of)'
+datum$auth_loc[datum$auth_loc=='Guinea Bissau'] = 'Guinea-Bissau'
+datum$auth_loc[datum$auth_loc=='Falkland Island'] = 'Falkland Islands (Malvinas)'
+datum$auth_loc[datum$auth_loc=='Eswatini'] = 'Swaziland'
+datum$auth_loc[datum$auth_loc=='Curacao'] = 'Netherlands Antilles'
+datum$auth_loc[datum$auth_loc=='Cote Ivoire'] = 'Cote d\'Ivoire'
+datum$auth_loc[datum$auth_loc=='Cent Afr Republ'] = 'Central African Republic'
+datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
+
+#list countries not in list (should be zero now!)
+myCountries[CountryIntersect==FALSE]
 
 # for matched: 3a. create new col(s) with univariate outliers corrected
 clean_cols = c('citations') # select cols to correct
