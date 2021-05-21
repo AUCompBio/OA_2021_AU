@@ -321,7 +321,7 @@ hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access
 summary(a_coo_merged$cit_diff)
 
 #note: would love to make a map with these values presented as a heat map!
-install.packages('maptools')
+#install.packages('maptools')
 library(maptools)
 data(wrld_simpl)
 brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
