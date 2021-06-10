@@ -59,23 +59,23 @@ length(unique(sort(datum$field)))
 # summary stats: other gold 
 OG = subset(datum,OAlab=='Other Gold') # subset data to other gold
 OGss = length(OG$journal)
-OGmean = mean(OG$clean_citations)
-OGsd = sd(OG$clean_citations)
+OGmean = mean(OG$norm_cit)
+OGsd = sd(OG$norm_cit)
 # summary stats: bronze
 Bron = subset(datum,OAlab=='Bronze') # subset data to bronze
 Bronss = length(Bron$journal)
-Bronmean = mean(Bron$clean_citations)
-Bronsd = sd(Bron$clean_citations)
+Bronmean = mean(Bron$norm_cit)
+Bronsd = sd(Bron$norm_cit)
 # summary stats: green
 Green = subset(datum,OAlab=='Green') # subset data to green
 Greenss = length(Green$journal)
-Greenmean = mean(Green$clean_citations)
-Greensd = sd(Green$clean_citations)
+Greenmean = mean(Green$norm_cit)
+Greensd = sd(Green$norm_cit)
 # summary stats: non open access (non OA)
 nonOA = subset(datum,OAlab=='Closed Access') # subset data to non OA
 nonOAss = length(nonOA$journal)
-nonOAmean = mean(nonOA$clean_citations)
-nonOAsd = sd(nonOA$clean_citations)
+nonOAmean = mean(nonOA$norm_cit)
+nonOAsd = sd(nonOA$norm_cit)
 
 # output summary stats
 sink("outputs/stats/OAdes_summarystats.txt")
@@ -169,7 +169,7 @@ data_summary <- function (datum) {
 }
 
 # violin plot: Citations by Access Designation
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) 
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
@@ -186,7 +186,7 @@ ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,
 
 # violin plot: Citations by Access Designation for each field
 
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) +
   facet_wrap(~field)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
@@ -252,7 +252,7 @@ ggsave("clean_vplot_JIF_OAdes.png", device = "png", path ="outputs/plots/", widt
 
 # violin plot: Citations by Year Published
 
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) +
   facet_wrap(~year)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
@@ -265,9 +265,9 @@ ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", wid
 
 # violin plot: Citations by Publisher
 
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) +
-  facet_wrap(~Publisher)
+  facet_wrap(~publisher)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
@@ -296,13 +296,13 @@ fun <- function(x){
 }
 
 #use doBy and reshape2 packages to summarize data by Author Country of Origin
-als=summaryBy(clean_citations~auth_loc+OAlab, data=datum,FUN=fun)
+als=summaryBy(norm_cit~auth_loc+OAlab, data=datum,FUN=fun)
 
 #reshape data to have column for each type of access
-a_coo=dcast(als,auth_loc~OAlab,value.var="clean_citations.m")
+a_coo=dcast(als,auth_loc~OAlab,value.var="norm_cit.m")
 
 #tally total records per country
-a_coo2=dcast(als,auth_loc~OAlab,value.var="clean_citations.n")
+a_coo2=dcast(als,auth_loc~OAlab,value.var="norm_cit.n")
 a_coo2$total_cit=a_coo2$Bronze+a_coo2$`Closed Access`+a_coo2$Green+a_coo2$`Other Gold`
 
 #merge citation count with mean citations
@@ -333,5 +333,28 @@ myCountries = wrld_simpl@data$NAME %in% a_coo_merged$auth_loc
 png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
 plot(wrld_simpl, col = a_coo_merged$colors[myCountries])
 legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
-       fill=colours, bty="n",cex=1.5)
+       fill=rev(colours), bty="n",cex=1.5)
 dev.off()
+
+
+
+#explore matched data a little more
+matched <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
+matched$vol_issue=paste(matched$Volume,matched$Issue,sep=".")
+
+# check data
+names(matched)
+head(matched)
+summary(matched)
+
+#try to summarize 
+matched2=summaryBy(norm_cit~journal+OAlab+vol_issue, data=matched,FUN=mean)
+
+#reshape data to have column for each type of access
+m3=dcast(matched2,vol_issue+journal~OAlab)
+
+m3$paid_cit_adv=m3$`Other Gold`-m3$`Closed Access`
+m3$free_cit_adv=mean(m3$Bronze+m3$Green,na.rm=T)-m3$`Closed Access`
+
+summary(m3$paid_cit_adv)
+summary(m3$free_cit_adv)

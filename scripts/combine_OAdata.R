@@ -153,6 +153,23 @@ for (col in clean_cols) {
   datum[,paste0("clean_",col)] = var # append col
   rm(col,IQR,quarters,var)
 }
+
+#a slightly different approach to apply threshold to high citation values - citation count is correlated with year
+mod=lm(datum$citations~datum$year)
+
+#use model coefficient to make fitted column
+datum$fitted <- mod$coefficients[2]*datum$year + mod$coefficients[1]
+
+# calculate cooks d for all data
+datum$cooksd <- cooks.distance(mod)
+
+#get upper limit of citation count
+upper_limit_citations=min(datum[(datum$cooksd >=4*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+          (datum$citations > datum$fitted),]$citations)
+
+datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,upper_limit_citations)
+
+
 # 3b. create new col from OA designations (ie OA, Closed, Other)
 datum$`OAdes`= replace_na(datum$`OAdes`, "")
 datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
@@ -239,6 +256,22 @@ for (col in clean_cols) {
   matched[,paste0("clean_",col)] = var # append col
   rm(col,IQR,quarters,var)
 }
+
+#a slightly different approach to apply threshold to high citation values - citation count is correlated with year
+mod=lm(matched$citations~matched$year)
+
+#use model coefficient to make fitted column
+matched$fitted <- mod$coefficients[2]*matched$year + mod$coefficients[1]
+
+# calculate cooks d for all data
+matched$cooksd <- cooks.distance(mod)
+
+#get upper limit of citation count
+upper_limit_citations=min(matched[(matched$cooksd >=4*mean(matched$cooksd, na.rm=T)) & # cooksD is high
+                                  (matched$citations > matched$fitted),]$citations)
+
+matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
+
 # 3b. create new col from OA designations (ie OA, Closed, Other)
 matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', matched$OAdes), 'Bronze',
@@ -251,10 +284,10 @@ matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_lo
 
 # 4. remove unneeded cols
 datum <- datum %>% select(journal, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count)
+                          year, auth_loc, auth_count,norm_cit,Volume,Issue)
 
 matched <- matched %>% select(journal, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count)
+                          year, auth_loc, auth_count,norm_cit,Volume,Issue)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
 
