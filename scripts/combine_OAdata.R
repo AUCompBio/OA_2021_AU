@@ -162,7 +162,7 @@ datum$fitted <- mod$coefficients[2]*datum$year + mod$coefficients[1]
 datum$cooksd <- cooks.distance(mod)
 
 #get upper limit of citation count
-upper_limit_citations=min(datum[(datum$cooksd >=4*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+upper_limit_citations=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
           (datum$citations > datum$fitted),]$citations)
 
 datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,upper_limit_citations)
@@ -264,7 +264,7 @@ matched$fitted <- mod$coefficients[2]*matched$year + mod$coefficients[1]
 matched$cooksd <- cooks.distance(mod)
 
 #get upper limit of citation count
-upper_limit_citations=min(matched[(matched$cooksd >=4*mean(matched$cooksd, na.rm=T)) & # cooksD is high
+upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm=T)) & # cooksD is high
                                   (matched$citations > matched$fitted),]$citations)
 
 matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
