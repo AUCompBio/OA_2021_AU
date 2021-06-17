@@ -335,26 +335,3 @@ plot(wrld_simpl, col = a_coo_merged$colors[myCountries])
 legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
        fill=rev(colours), bty="n",cex=1.5)
 dev.off()
-
-
-
-#explore matched data a little more
-matched <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
-matched$vol_issue=paste(matched$Volume,matched$Issue,sep=".")
-
-# check data
-names(matched)
-head(matched)
-summary(matched)
-
-#try to summarize 
-matched2=summaryBy(norm_cit~journal+OAlab+vol_issue, data=matched,FUN=mean)
-
-#reshape data to have column for each type of access
-m3=dcast(matched2,vol_issue+journal~OAlab)
-
-m3$paid_cit_adv=m3$`Other Gold`-m3$`Closed Access`
-m3$free_cit_adv=mean(m3$Bronze+m3$Green,na.rm=T)-m3$`Closed Access`
-
-summary(m3$paid_cit_adv)
-summary(m3$free_cit_adv)
