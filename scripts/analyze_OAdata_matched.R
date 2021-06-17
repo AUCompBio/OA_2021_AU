@@ -72,13 +72,21 @@ summary(m5$paid_cit_adv)
 #combine with metadata again
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
 
+#remove weird columns
+md=md[,c(1:8)]
+
 #join metadata with clean data
-m5 <- left_join(m5, md, by = "journal")
+merged <- merge(m5, md, by.x = "journal",by.y="jour")
 
 
 #now we are ready to do some stats!
-fit <- lmer(clean_citations~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+jour_loc+(1|field:journal), 
-           data = datum)
+# Recode categorical fields (deviation- compares level to grand mean)
+contrasts(matched$field) = contr.sum(12)
+contrasts(matched$jour_loc) =contr.sum(15)
+
+#do NOT run this! need to work on the model a bit!
+fit <- glmer(norm_cit~OAlab+field+JCR_quart+jour_loc+(1|field:journal), #+(1|journal:vol_issue), 
+           data = matched, family=poisson)
 summary(fit)
 
 
