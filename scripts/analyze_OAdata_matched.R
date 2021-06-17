@@ -1,6 +1,19 @@
-
-library(dplyr)
+# install.packages('ggplot2') # run once
 library(ggplot2)
+# install.packages('tidyverse') # run once
+library(tidyverse)
+#install.packages('doBy')
+library(doBy)
+#install.packages('reshape2')
+library(reshape2)
+#install.packages('maptools')
+library(maptools)
+#install.packages('nlme')
+library(nlme)
+#install.packages('lme4')
+library(lme4)
+library(dplyr)
+
 
 # the following code takes matched data
 # from combine_OAdata.R script
@@ -34,10 +47,18 @@ m5$OA.count=m4$`Other Gold`
 #sum values for Bronze and Green
 m3=m3 %>% rowwise() %>% mutate(free_sum = sum(Bronze, Green, na.rm = TRUE))
 m4=m4 %>% rowwise() %>% mutate(free_count = sum(Bronze, Green, na.rm = TRUE))
+
+#add free sum column to m5 dataframe
 m5$free.count=m4$free_count
+
+#re-calculate mean of free OA articles
 m5$free_cit_mean=ifelse(m4$free_count==0,NA,m3$free_sum/m4$free_count)
+
+#compute difference between Closed Access and OA paid/free
 m5=m5 %>% rowwise() %>% mutate(free_cit_diff = free_cit_mean - `Closed Access`)
 m5=m5 %>% rowwise() %>% mutate(paid_cit_diff = `Other Gold` - `Closed Access`)
+
+#add column with the difference between paid vs free cit difference
 m5=m5 %>% rowwise() %>% mutate(paid_cit_adv = paid_cit_diff - free_cit_diff)
 
 #summary of the citation difference between nonOA and paid vs. free OA options
@@ -51,8 +72,23 @@ summary(m5$paid_cit_adv)
 #combine with metadata again
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
 
+#remove weird columns
+md=md[,c(1:8)]
+
 #join metadata with clean data
-m5 <- left_join(m5, md, by = "journal")
+merged <- merge(m5, md, by.x = "journal",by.y="jour")
+
+
+#now we are ready to do some stats!
+# Recode categorical fields (deviation- compares level to grand mean)
+contrasts(matched$field) = contr.sum(12)
+contrasts(matched$jour_loc) =contr.sum(15)
+
+#do NOT run this! need to work on the model a bit!
+fit <- glmer(norm_cit~OAlab+field+JCR_quart+jour_loc+(1|field:journal), #+(1|journal:vol_issue), 
+           data = matched, family=poisson)
+summary(fit)
+
 
 
 #quick plots
