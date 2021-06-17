@@ -18,6 +18,8 @@ rm(list=ls(all.names=TRUE))
 library(ggplot2)
 # install.packages('tidyverse') # run once
 library(tidyverse)
+#install.packages('knitr')
+library(knitr)
 #install.packages('doBy')
 library(doBy)
 #install.packages('reshape2')
@@ -28,6 +30,8 @@ library(maptools)
 library(nlme)
 #install.packages('lme4')
 library(lme4)
+#install.package('lmerTest')
+library(lmerTest)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -42,16 +46,16 @@ summary(datum)
 # comment
 
 # print number of records per journal
-datum$journal = as.factor(datum$journal) # reset as factor
+datum$jour = as.factor(datum$jour) # reset as factor
 sink("outputs/stats/recordnum_journal.txt")
-summary(datum$journal) # print number
+summary(datum$jour) # print number
 sink()
 
 #print range of records by journal
-range(summary(datum$journal))
+range(summary(datum$jour))
 
 #number of journals
-length(unique(sort(datum$journal)))
+length(unique(sort(datum$jour)))
 
 #number of field
 length(unique(sort(datum$field)))
@@ -70,20 +74,25 @@ sink()
 # Data Exploration  ================
 ls.str(datum)
 #need to id variables I want as a factor
-datum$journal <- as.factor(datum$journal)
+datum$jour <- as.factor(datum$jour)
 datum$OAlab <- as.factor(datum$OAlab)
 datum$field <- as.factor(datum$field)
 datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
-datum$publisher <- as.factor(datum$publisher)
+datum$pub <- as.factor(datum$pub)
+
+
 
 # Plot histogram
-hist(datum$clean_citations)
+hist(datum$clean_citations) 
+hist(datum$norm_cit) # for alternative normalization metric
 # clean citations is not normally distributed; likely should not use 
 #   linear model to fit these data. should use generalized linear model (Poisson).
 
 mean(datum$clean_citations)
 var(datum$clean_citations)
+mean(datum$norm_cit)
+var(datum$norm_cit) # for alternative normalization metric
 # the variance is higher than the mean, indicating an expectation of 
 #   over-dispersion in the model.
 
@@ -92,17 +101,23 @@ var(datum$clean_citations)
 
 # Recode categorical fields (deviation- compares level to grand mean)
 contrasts(datum$field) = contr.sum(12)
-contrasts(datum$jour_loc) =contr.sum(15)
 
-m2 <- lmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+jour_loc+(1|field:journal), 
+
+mod1 <- lmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+(1|field:jour), 
            data = datum)
-summary(m2)
+summary(mod1)
 
+mod1.1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+(1|field:jour), 
+             data = datum)
+summary(mod1.1)
 
-m3 <- glmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+(1|field:journal), 
+mod2 <- glmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+(1|field:jour), 
             data = datum, family = poisson)
-summary(m3)
+summary(mod2)
 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+(1|field:jour), 
+              data = datum, family = poisson)
+summary(mod2.1)
 
 
 
