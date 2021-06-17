@@ -1,5 +1,15 @@
+
+
+# the following code takes matched data
+# from combine_OAdata.R script
+# and calculated citation advantage
+# using an lm with various factors
+
+
 #explore matched data a little more
 matched <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
+
+#combine volume and issue into single column
 matched$vol_issue=paste(matched$Volume,matched$Issue,sep=".")
 
 # check data
