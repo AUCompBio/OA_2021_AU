@@ -99,11 +99,11 @@ matched <- as.data.frame(rbindlist(matchlist))
 # 5. merge w/ metadata
 
 # 1. rename cols
-datum <- datum %>% rename(journal = 'Source Title',
+datum <- datum %>% dplyr::rename(journal = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
-matched <- matched %>% rename(journal = 'Source Title',
+matched <- matched %>% dplyr::rename(journal = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
@@ -121,7 +121,9 @@ datum <- datum %>%
   filter(is.na(`Special Issue`)) %>% 
   filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
   filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
-                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL'))
+                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL',
+                         'GENERAL AND COMPARATIVE ENDOCRINOLOGY',
+                         'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY'))
 # Correcting specific journal name
 datum <- datum %>% 
   mutate(across(journal,str_replace_all, 
@@ -169,10 +171,11 @@ datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,uppe
 
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
+datum$`OAdes`= replace_na(datum$`OAdes`, "")
 datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
                                           ifelse(grepl('Green', datum$OAdes), 'Green',
-                                                 ifelse(grepl('^$', matched$OAdes), 'Closed Access', 'Error'))))
+                                                 ifelse(grepl('^$', datum$OAdes), 'Closed Access', 'Error'))))
 # 3c. create new col from authors with count
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
@@ -289,15 +292,9 @@ matched <- matched %>% select(journal, citations, clean_citations, OAdes, OAlab,
 #datum = datum[keep_cols]
 
 # 5a. adding metadata
-md <- read_csv("data/Clean_JournalImpact.csv", col_names = TRUE)
-md <- md %>% rename(jour_loc = journal_address)
-# 5b. adding IF quantiles to metadata and merge to datum data.frame
-IFquant <- quantile(md$IF_5Y_2019)
-IFquant
-md <- md %>% add_column(JIFquant = cut(md$IF_5Y_2019, 
-                            breaks = c(0, IFquant[[2]], IFquant[[3]], IFquant[[4]], 40),
-                            labels = c("Q1","Q2","Q3","Q4")))
-# 5c. joining metadata with clean data and writing to output file
+md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
+
+# 5b. joining metadata with clean data and writing to output file
 datum <- left_join(datum, md, by = "journal")
 matched <- left_join(matched, md, by = "journal")
 write_csv(datum, file = "data/OA_data_fin.csv")

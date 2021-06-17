@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+
+
+|OAlab         | mean_cite| sd_cite| num_cite|
+|:-------------|---------:|-------:|--------:|
+|Bronze        |     17.56|    9.05|    58287|
+|Closed Access |     10.85|    8.40|    62754|
+|Green         |     13.73|    9.04|     9438|
+|Other Gold    |     16.84|    9.32|    18769|
+=======
 [1] "Mean(SD) Other Gold Citations = 29.19(40.76)"
 [1] "Sample Size = 18996"
 [1] "Mean(SD) non OA Citations = 13.11(17.11)"
@@ -6,3 +16,4 @@
 [1] "Sample Size = 9567"
 [1] "Mean(SD) Bronze Citations = 31.75(45.51)"
 [1] "Sample Size = 59690"
+>>>>>>> d694f0b4a26f0552ca1b9069e885adcc6220d473

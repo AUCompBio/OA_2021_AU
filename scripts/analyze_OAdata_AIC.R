@@ -14,9 +14,10 @@
 # clear workspace
 rm(list=ls(all.names=TRUE))
 
+
 # install.packages('ggplot2') # run once
 library(ggplot2)
-install.packages('tidyverse') # run once
+#install.packages('tidyverse') # run once
 library(tidyverse)
 #install.packages('doBy')
 library('doBy')
@@ -30,6 +31,10 @@ library(nlme)
 library(lme4)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+# drop col w/ NAs
+datum <- datum %>% select(-c(jour_loc, funding, auth_loc, convert_hybrid, OAdes, journal))
+# drop one last annoying NA
+datum = datum[-106010, ]
 
 # check data
 names(datum)
@@ -94,21 +99,18 @@ sink()
 
 # AIC & Multimodel Inference ================
 
-# Import Library
 library(MuMIn)
 library(arm)
 
-# drop col w/ NAs
-select(datum, -clean_citations)
 
-# drop one last annoying NA
-datum = datum[-106010, ]
 
 # Models w/ Every Variable Subset
-model = lm(clean_citations~., data=datum, na.action=na.fail) # where nal.fail avoids default list-wise deletion for missing data
-dd = dredge(model, extra=se.coef) # provides table w/ AIC results
-write.table(dd, file="AICresults.txt")
+# After removing some variables with missing data, the global model still has 10 parameters. This means 2^10 models. 
+# I will attempt to run this once, but if it exceeds 1hr, I will stop 6/1/21
 
+dd = dredge(model) # provides table w/ AIC results.
+# There was something wrong with the "se.coeff" part so I excluded it for the moment
+write.table(dd, file="outputs/stats/AICresults.txt")
 # Models w/ Variable Subsets Limited by AIC
 test = model.avg(get.models(dd,subset=TRUE))
 summary(test)
