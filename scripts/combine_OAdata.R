@@ -99,16 +99,16 @@ matched <- as.data.frame(rbindlist(matchlist))
 # 5. merge w/ metadata
 
 # 1. rename cols
-datum <- datum %>% dplyr::rename(journal = 'Source Title',
+datum <- datum %>% dplyr::rename(jour = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
-matched <- matched %>% dplyr::rename(journal = 'Source Title',
+matched <- matched %>% dplyr::rename(jour = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
 
-#names(datum)[names(datum)=='Source Title'] = 'journal'
+#names(datum)[names(datum)=='Source Title'] = 'jour'
 #names(datum)[names(datum)=='Times Cited, All Databases'] = 'citations'
 #names(datum)[names(datum)=='Open Access Designations'] = 'OAdes'
 #names(datum)[names(datum)=='Publication Year'] = 'year'
@@ -117,28 +117,36 @@ matched <- matched %>% dplyr::rename(journal = 'Source Title',
 # 2. clean up journal names
 # Removing excluded journals and special issues; making all journal titles uppercase
 datum <- datum %>%  
-  mutate(journal = toupper(journal)) %>% 
+  mutate(jour = toupper(jour)) %>% 
   filter(is.na(`Special Issue`)) %>% 
   filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
-  filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
+  filter(!jour %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
                          'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL',
                          'GENERAL AND COMPARATIVE ENDOCRINOLOGY',
-                         'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY'))
+                         'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
+                         'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
+                         'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
+                         'ACTA THERIOLOGICA'))
 # Correcting specific journal name
 datum <- datum %>% 
-  mutate(across(journal,str_replace_all, 
+  mutate(across(jour,str_replace_all, 
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 #for matched: Removing excluded journals and special issues; making all journal titles uppercase 
 matched <- matched %>%  
-  mutate(journal = toupper(journal)) %>% 
+  mutate(jour = toupper(jour)) %>% 
   filter(is.na(`Special Issue`)) %>% 
   filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
-  filter(!journal %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
-                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL'))
+  filter(!jour %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
+                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL',
+                         'GENERAL AND COMPARATIVE ENDOCRINOLOGY',
+                         'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
+                         'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
+                         'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
+                         'ACTA THERIOLOGICA'))
 # Correcting specific journal name
 matched <- matched %>% 
-  mutate(across(journal,str_replace_all, 
+  mutate(across(jour,str_replace_all, 
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 
@@ -171,7 +179,7 @@ datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,uppe
 
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
-datum$`OAdes`= replace_na(datum$`OAdes`, "")
+datum$OAdes = replace_na(datum$OAdes, "")
 datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
                                           ifelse(grepl('Green', datum$OAdes), 'Green',
@@ -273,6 +281,7 @@ upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm
 matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
+matched$OAdes = replace_na(datum$OAdes, "")
 matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', matched$OAdes), 'Bronze',
                                           ifelse(grepl('Green', matched$OAdes), 'Green',
@@ -282,20 +291,22 @@ matched <- matched %>% add_column(auth_count = str_count(matched$Authors, ";") +
 # 3d. create new col from reprint addresses with author country
 matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_loc, -1),"[.]"))
 
-# 4. remove unneeded cols
-datum <- datum %>% select(journal, citations, clean_citations, OAdes, OAlab, 
+# 4. select desired cols
+datum <- datum %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
                           year, auth_loc, auth_count,norm_cit,Volume,Issue)
 
-matched <- matched %>% select(journal, citations, clean_citations, OAdes, OAlab, 
+matched <- matched %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
                           year, auth_loc, auth_count,norm_cit,Volume,Issue)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
 
 # 5a. adding metadata
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
+# exclude empty fields
+md <- md %>% dplyr::select(!(starts_with("X")))
 
 # 5b. joining metadata with clean data and writing to output file
-datum <- left_join(datum, md, by = "journal")
-matched <- left_join(matched, md, by = "journal")
+datum <- left_join(datum, md, by = "jour")
+matched <- left_join(matched, md, by = "jour")
 write_csv(datum, file = "data/OA_data_fin.csv")
 write_csv(matched, file = "data/matched_OA_data_fin.csv")
