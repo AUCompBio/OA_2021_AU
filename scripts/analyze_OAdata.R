@@ -56,100 +56,55 @@ length(unique(sort(datum$journal)))
 #number of field
 length(unique(sort(datum$field)))
 
-# summary stats: other gold 
-OG = subset(datum,OAlab=='Other Gold') # subset data to other gold
-OGss = length(OG$journal)
-OGmean = mean(OG$norm_cit)
-OGsd = sd(OG$norm_cit)
-# summary stats: bronze
-Bron = subset(datum,OAlab=='Bronze') # subset data to bronze
-Bronss = length(Bron$journal)
-Bronmean = mean(Bron$norm_cit)
-Bronsd = sd(Bron$norm_cit)
-# summary stats: green
-Green = subset(datum,OAlab=='Green') # subset data to green
-Greenss = length(Green$journal)
-Greenmean = mean(Green$norm_cit)
-Greensd = sd(Green$norm_cit)
-# summary stats: non open access (non OA)
-nonOA = subset(datum,OAlab=='Closed Access') # subset data to non OA
-nonOAss = length(nonOA$journal)
-nonOAmean = mean(nonOA$norm_cit)
-nonOAsd = sd(nonOA$norm_cit)
+# summary stats by OA label
+sum.stat <- datum %>% group_by(OAlab) %>% 
+  summarise(mean_cite = round(mean(clean_citations),2),
+            sd_cite = round(sd(clean_citations),2),
+            num_cite = length(clean_citations))
 
 # output summary stats
 sink("outputs/stats/OAdes_summarystats.txt")
-print(paste0("Mean(SD) Other Gold Citations = ",round(OGmean,2),"(",round(OGsd,2),")"))
-print(paste("Sample Size =", OGss))
-
-print(paste0("Mean(SD) non OA Citations = ",round(nonOAmean,2),"(",round(nonOAsd,2),")"))
-print(paste("Sample Size =", nonOAss))
-
-print(paste0("Mean(SD) Green Citations = ",round(Greenmean,2),"(",round(Greensd,2),")"))
-print(paste("Sample Size =", Greenss))
-
-print(paste0("Mean(SD) Bronze Citations = ",round(Bronmean,2),"(",round(Bronsd,2),")"))
-print(paste("Sample Size =", Bronss))
+kable(sum.stat)
 sink()
 
+# Data Exploration  ================
+ls.str(datum)
+#need to id variables I want as a factor
+datum$journal <- as.factor(datum$journal)
+datum$OAlab <- as.factor(datum$OAlab)
+datum$field <- as.factor(datum$field)
+datum$jour_loc <- as.factor(datum$jour_loc)
+datum$JCR_quart <- as.factor(datum$JCR_quart)
+datum$publisher <- as.factor(datum$publisher)
+
+# Plot histogram
+hist(datum$clean_citations)
+# clean citations is not normally distributed; likely should not use 
+#   linear model to fit these data. should use generalized linear model (Poisson).
+
+mean(datum$clean_citations)
+var(datum$clean_citations)
+# the variance is higher than the mean, indicating an expectation of 
+#   over-dispersion in the model.
+
+
 # Statistical Tests ================
-# Bottom up model selection
 
+# Recode categorical fields (deviation- compares level to grand mean)
+contrasts(datum$field) = contr.sum(12)
+contrasts(datum$jour_loc) =contr.sum(15)
 
-# lm (anova): test whether OAlab predicts citations
-m1 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access"),
-        data=datum, subset = c(OAlab != "Error"))
-anova(m1)
-summary(m1)
-confint(m1)
-
-m2 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") + IF_5Y_2019,
-        data=datum, subset = c(OAlab != "Error"))
-anova(m2)
+m2 <- lmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+jour_loc+(1|field:journal), 
+           data = datum)
 summary(m2)
-confint(m2)
 
-m3 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year ,data=datum, subset = c(OAlab != "Error"))
-anova(m3)
+
+m3 <- glmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+(1|field:journal), 
+            data = datum, family = poisson)
 summary(m3)
-confint(m3)
 
-m4 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year + field ,data=datum, subset = c(OAlab != "Error"))
-anova(m4)
-summary(m4)
-confint(m4)
 
-m5 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year + field + publisher,data=datum, subset = c(OAlab != "Error"))
-anova(m5)
-summary(m5)
-confint(m5)
 
-m6 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year + field + publisher + auth_count,data=datum, subset = c(OAlab != "Error"))
-anova(m6)
-summary(m6)
-confint(m6)
-
-m7 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year + field + publisher + auth_count + auth_loc,data=datum, subset = c(OAlab != "Error"))
-anova(m7)
-summary(m7)
-confint(m7)
-
-m8 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") +
-          IF_5Y_2019 + year + field + publisher + auth_count + auth_loc + jour_loc,data=datum, subset = c(OAlab != "Error"))
-anova(m8)
-summary(m8)
-confint(m8)
-
-m9 = lm(clean_citations~relevel(as.factor(OAlab), ref = "Closed Access") *
-          year + IF_5Y_2019 + field + publisher + auth_count + auth_loc + jour_loc,data=datum, subset = c(OAlab != "Error"))
-anova(m9)
-summary(m9)
-confint(m9)
 
 # export results from anova to .txt file
 sink("clean_results_anova_WOS2.txt")
