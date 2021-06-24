@@ -57,13 +57,15 @@ m5$free_cit_mean=ifelse(m4$free_count==0,NA,m3$free_sum/m4$free_count)
 #compute difference between Closed Access and OA paid/free
 m5=m5 %>% rowwise() %>% mutate(free_cit_diff = free_cit_mean - `Closed Access`)
 m5=m5 %>% rowwise() %>% mutate(paid_cit_diff = `Other Gold` - `Closed Access`)
+m5=m5 %>% rowwise() %>% mutate(green_cit_diff = Green - `Closed Access`)
 
 #add column with the difference between paid vs free cit difference
-m5=m5 %>% rowwise() %>% mutate(paid_cit_adv = paid_cit_diff - free_cit_diff)
+m5=m5 %>% rowwise() %>% mutate(paid_cit_adv = paid_cit_diff - green_cit_diff)
 
 #summary of the citation difference between nonOA and paid vs. free OA options
 summary(m5$paid_cit_diff)
-summary(m5$free_cit_diff)
+#summary(m5$free_cit_diff)
+summary(m5$green_cit_diff)
 
 #summary of the difference between paid and free OA advantages
 summary(m5$paid_cit_adv)
