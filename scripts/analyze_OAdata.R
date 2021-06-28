@@ -127,44 +127,50 @@ mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+
 summary(mod2.1)
 
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
                 data = datum, family = poisson(link = "log"))
-summary(mod2.1)
+summary(mod2.2)
   
   # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
-mod2.2 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
+mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
                  data = datum, family = poisson(link = "log"))
-summary(mod2.2)
+summary(mod2.3)
 
   # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-mod2.3 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
+mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
-summary(mod2.3)
+summary(mod2.4)
   # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
     # increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
-mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
+mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
                 data = datum, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
-summary(mod2.4)
+summary(mod2.5)
+  # model with only terms that we are interested in interactions between, with random effect of journal nested in field
+mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)*scale(APC)+(1|field:jour), 
+                data = datum, family = poisson(link = "log"))
+summary(mod2.6)
+
 
   # Tried starting the model from where it failed to converge
-ss <- getME(mod2.4,c("theta","fixef"))
-model_2 <- update(mod2.4,start=ss)
+ss <- getME(mod2.5,c("theta","fixef"))
+model_2 <- update(mod2.5,start=ss)
   
   #Checking for singularity (want this value to not be close to zero)
   # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
-tt <- getME(mod2.4,"theta")
-ll <- getME(mod2.4,"lower")
+tt <- getME(mod2.5,"theta")
+ll <- getME(mod2.5,"lower")
 min(tt[ll==0])
 
   #
-ranef(mod2.4)
-fixef(mod2.4)
+ranef(mod2.5)
+fixef(mod2.5)
 
   # Plotting estimates
 theme_set(theme_sjplot())
-plot_model(mod2.1,sort.est = TRUE,show.values = TRUE,
+plot_model(mod2.5,sort.est = TRUE,show.values = TRUE,
            value.offset = .4,vline.color = "green")
-plot_model(mod2.1, type = 're')
+plot_model(mod2.5, type = 're')
+
 range(datum$AIS)
 
 
