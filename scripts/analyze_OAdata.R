@@ -35,6 +35,7 @@ library(lmerTest)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
+
 # check data
 names(datum)
 head(datum)
@@ -66,6 +67,7 @@ sum.stat <- datum %>% group_by(OAlab) %>%
             sd_cite = round(sd(clean_citations),2),
             num_cite = length(clean_citations))
 
+
 # output summary stats
 sink("outputs/stats/OAdes_summarystats.txt")
 kable(sum.stat)
@@ -80,6 +82,7 @@ datum$field <- as.factor(datum$field)
 datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
 datum$pub <- as.factor(datum$pub)
+datum$year <- as.factor(datum$year)
 
 
 
@@ -88,7 +91,7 @@ hist(datum$clean_citations)
 hist(datum$norm_cit) # for alternative normalization metric
 # clean citations is not normally distributed; likely should not use 
 #   linear model to fit these data. should use generalized linear model (Poisson).
-
+hist(datum$AIS)
 mean(datum$clean_citations)
 var(datum$clean_citations)
 mean(datum$norm_cit)
@@ -98,27 +101,71 @@ var(datum$norm_cit) # for alternative normalization metric
 
 
 # Statistical Tests ================
+library(car)
 
 # Recode categorical fields (deviation- compares level to grand mean)
 contrasts(datum$field) = contr.sum(12)
+contrasts(datum$year) = contr.sum(6)
 
-
-mod1 <- lmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+(1|field:jour), 
-           data = datum)
-summary(mod1)
-
-mod1.1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+(1|field:jour), 
+# general linear model using norm_cite as the response
+mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
              data = datum)
-summary(mod1.1)
+summary(mod1)
+anova(mod1)
 
-mod2 <- glmer(clean_citations~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+(1|field:jour), 
-            data = datum, family = poisson)
-summary(mod2)
+# general linear model using norm_cite as the response. Including interactions for access by field and author count by APC
+mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+               data = datum)
+summary(mod1.2)
+Anova(mod1.2)
 
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+(1|field:jour), 
-              data = datum, family = poisson)
+# Poisson regression using norm_cit as response
+  # basic model of all factors, with a random effect of journal nested in field
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+
+                  APC+(1|field:jour), 
+              data = datum, family = poisson(link = "log"))
 summary(mod2.1)
 
+  # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
+                data = datum, family = poisson(link = "log"))
+summary(mod2.1)
+  
+  # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
+mod2.2 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
+                 data = datum, family = poisson(link = "log"))
+summary(mod2.2)
+
+  # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
+mod2.3 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
+                data = datum, family = poisson(link = "log"))
+summary(mod2.3)
+  # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
+    # increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
+mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
+                data = datum, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
+summary(mod2.4)
+
+  # Tried starting the model from where it failed to converge
+ss <- getME(mod2.4,c("theta","fixef"))
+model_2 <- update(mod2.4,start=ss)
+  
+  #Checking for singularity (want this value to not be close to zero)
+  # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+tt <- getME(mod2.4,"theta")
+ll <- getME(mod2.4,"lower")
+min(tt[ll==0])
+
+  #
+ranef(mod2.4)
+fixef(mod2.4)
+
+  # Plotting estimates
+theme_set(theme_sjplot())
+plot_model(mod2.1,sort.est = TRUE,show.values = TRUE,
+           value.offset = .4,vline.color = "green")
+plot_model(mod2.1, type = 're')
+range(datum$AIS)
 
 
 # export results from anova to .txt file
@@ -128,7 +175,7 @@ print(confint(model))
 sink()  # returns output to the console
 
 # Plotting ============
-#  (lm (anova) results)
+#  comments
 
 #compute data summary to add to plot
 data_summary <- function (datum) {
@@ -138,6 +185,10 @@ data_summary <- function (datum) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
+plot(norm_cit ~ APC, data = datum)
+ggplot(datum, aes(x=APC, y=norm_cit, color=OAlab)) +
+  geom_point() + facet_wrap(~auth_count) 
+
 # violin plot: Citations by Access Designation
 vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) 
@@ -146,10 +197,10 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-vplot + annotate(geom="text", x="Bronze", y=-4.75, label = Bronss)+
-  annotate(geom="text", x="Closed Access", y=-4.75, label = nonOAss)+
-  annotate(geom="text", x="Green", y=-4.75, label = Greenss)+
-  annotate(geom="text", x="Other Gold", y=-4.75, label = OGss)
+vplot + annotate(geom="text", x="Bronze", y=-20, label = sum.stat[1,4])+
+  annotate(geom="text", x="Closed Access", y=-20, label = sum.stat[2,4])+
+  annotate(geom="text", x="Green", y=-20, label = sum.stat[3,4])+
+  annotate(geom="text", x="Other Gold", y=-20, label = sum.stat[4,4])
 # + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.8, binwidth=1) # add above to include data points in plot
 ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
@@ -206,17 +257,17 @@ plot(rf_merged$Rank,rf_merged$green_cit_diff,main="Research Field Rank vs. Green
 plot(rf_merged$Rank,rf_merged$gold_cit_diff,main="Research Field Rank vs. Other Gold OA Cit Difference",xlab="Research Field Rank",ylab="Other Gold OA vs CA citation # diff",pch=16)
 dev.off()
 
-# violin plot: Citations by Journal Impact Factor (JIF) quantile
+# violin plot: Citations by Journal C Rank (JCR) quartile
 
 vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
   geom_violin(trim=FALSE) +
-  facet_wrap(~JIFquant)
+  facet_wrap(~JCR_quart)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-ggsave("clean_vplot_JIF_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_JCR_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 
