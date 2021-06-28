@@ -99,6 +99,12 @@ var(datum$norm_cit) # for alternative normalization metric
 # the variance is higher than the mean, indicating an expectation of 
 #   over-dispersion in the model.
 
+# Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
+datum$norm_cit_log <- log(datum$norm_cit + 1)
+# Plot histogram and estimate mean & variance
+hist(datum$norm_cit_log)
+mean(datum$norm_cit_log)
+var(datum$norm_cit_log)
 
 # Statistical Tests ================
 library(car)
