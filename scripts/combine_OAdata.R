@@ -150,7 +150,7 @@ matched <- matched %>%
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 
-# 3a. create new col(s) with univariate outliers corrected
+##### 3a. create new col(s) with univariate outliers corrected##### 
 clean_cols = c('citations') # select cols to correct
 for (col in clean_cols) {
   var = datum[[col]] # select col
@@ -161,7 +161,7 @@ for (col in clean_cols) {
   datum[,paste0("clean_",col)] = var # append col
   rm(col,IQR,quarters,var)
 }
-
+#####
 #a slightly different approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(datum$citations~datum$year)
 
@@ -253,7 +253,7 @@ myCountries=unique(sort(datum$auth_loc))
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
 
-# for matched: 3a. create new col(s) with univariate outliers corrected
+##### for matched: 3a. create new col(s) with univariate outliers corrected #####
 clean_cols = c('citations') # select cols to correct
 for (col in clean_cols) {
   var = matched[[col]] # select col
@@ -264,7 +264,7 @@ for (col in clean_cols) {
   matched[,paste0("clean_",col)] = var # append col
   rm(col,IQR,quarters,var)
 }
-
+#####
 #a slightly different approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(matched$citations~matched$year)
 
@@ -281,7 +281,7 @@ upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm
 matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
-matched$OAdes = replace_na(datum$OAdes, "")
+matched$OAdes = replace_na(matched$OAdes, "")
 matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
                      'Other Gold', ifelse(grepl('Bronze', matched$OAdes), 'Bronze',
                                           ifelse(grepl('Green', matched$OAdes), 'Green',
@@ -304,6 +304,7 @@ matched <- matched %>% dplyr::select(jour, citations, clean_citations, OAdes, OA
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
 # exclude empty fields
 md <- md %>% dplyr::select(!(starts_with("X")))
+md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
 
 # 5b. joining metadata with clean data and writing to output file
 datum <- left_join(datum, md, by = "jour")
