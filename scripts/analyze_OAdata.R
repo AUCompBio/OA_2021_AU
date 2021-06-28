@@ -30,7 +30,7 @@ library(maptools)
 library(nlme)
 #install.packages('lme4')
 library(lme4)
-#install.package('lmerTest')
+#install.packages('lmerTest')
 library(lmerTest)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
