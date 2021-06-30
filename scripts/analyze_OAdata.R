@@ -32,6 +32,8 @@ library(nlme)
 library(lme4)
 #install.packages('lmerTest')
 library(lmerTest)
+#install.packages('car')
+library(car)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -107,7 +109,6 @@ mean(datum$norm_cit_log)
 var(datum$norm_cit_log)
 
 # Statistical Tests ================
-library(car)
 
 # Recode categorical fields (deviation- compares level to grand mean)
 contrasts(datum$field) = contr.sum(12)
@@ -360,8 +361,6 @@ hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access
 summary(a_coo_merged$cit_diff)
 
 #note: would love to make a map with these values presented as a heat map!
-#install.packages('maptools')
-library(maptools)
 data(wrld_simpl)
 brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
 a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
