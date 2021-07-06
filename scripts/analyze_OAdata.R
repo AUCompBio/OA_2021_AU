@@ -135,6 +135,14 @@ mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*s
 summary(mod1.2)
 Anova(mod1.2)
 
+# general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
+mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+               data = datum)
+summary(mod1.2.log)
+Anova(mod1.2.log)
+
+
+
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+
