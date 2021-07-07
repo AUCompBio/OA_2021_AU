@@ -73,7 +73,7 @@ summary(m5$paid_cit_adv)
 
 #combine with metadata again
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
-
+md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
 #remove weird columns
 md=md[,c(1:8)]
 
@@ -82,14 +82,19 @@ merged <- merge(m5, md, by.x = "journal",by.y="jour")
 
 
 #now we are ready to do some stats!
-# Recode categorical fields (deviation- compares level to grand mean)
+# Recode categorical fields (deviation-compares level to grand mean)
 contrasts(matched$field) = contr.sum(12)
 contrasts(matched$jour_loc) =contr.sum(15)
 
 #do NOT run this! need to work on the model a bit!
-fit <- glmer(norm_cit~OAlab+field+JCR_quart+jour_loc+(1|field:journal), #+(1|journal:vol_issue), 
+fit <- glmer(norm_cit~OAlab+field+JCR_quart+jour_loc+(1|field:jour), #+(1|journal:vol_issue), 
            data = matched, family=poisson)
 summary(fit)
+
+#from Amanda's code
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+(1|field:jour), 
+                data = datum, family = poisson)
+summary(mod2.1)
 
 
 
