@@ -126,7 +126,7 @@ datum <- datum %>%
                          'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
                          'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
                          'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
-                         'ACTA THERIOLOGICA'))
+                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION'))
 # Correcting specific journal name
 datum <- datum %>% 
   mutate(across(jour,str_replace_all, 
@@ -143,7 +143,7 @@ matched <- matched %>%
                          'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
                          'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
                          'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
-                         'ACTA THERIOLOGICA'))
+                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION'))
 # Correcting specific journal name
 matched <- matched %>% 
   mutate(across(jour,str_replace_all, 
@@ -177,6 +177,8 @@ upper_limit_citations=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) &
 
 datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,upper_limit_citations)
 
+# Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
+datum$norm_cit_log <- log(datum$norm_cit + 1)
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
 datum$OAdes = replace_na(datum$OAdes, "")
@@ -280,6 +282,9 @@ upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm
 
 matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
 
+# Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
+matched$norm_cit_log <- log(matched$norm_cit + 1)
+
 # 3b. create new col from OA designations (ie OA, Closed, Other)
 matched$OAdes = replace_na(matched$OAdes, "")
 matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
@@ -293,10 +298,10 @@ matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_lo
 
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,Volume,Issue)
+                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,Issue)
 
 matched <- matched %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,Volume,Issue)
+                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,Issue)
 #keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
 #datum = datum[keep_cols]
 
