@@ -252,6 +252,7 @@ datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
 myCountries=unique(sort(datum$auth_loc))
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
+write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 ##### for matched: 3a. create new col(s) with univariate outliers corrected #####
 clean_cols = c('citations') # select cols to correct
