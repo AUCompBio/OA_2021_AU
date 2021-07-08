@@ -4,11 +4,13 @@ _/ = completed
 * = working idea
 
 #### General ####
- Update readme!
+ Update readme!DG/SB
 
 #### Data Wrangling/Clean UP ####
 Things to export from original dataframe to fin dataframe (with index):
  year [45], author [2], reprint_address[24] _/
+ 
+ remove Nature ecology and evolution
  
 Things to edit for fin dataframe:
  impact factor quantiles _/
@@ -17,10 +19,12 @@ Things to edit for fin dataframe:
   This is add- but there are still some issues, example: Lanka = Sri Lanka _/ LSS
  exclude data that is from Zebrafish & published in 2019 _/ 
  Identify journals missing years with entries in timeframe & those with name changes _/ TM
+ GNI per country (classifying developing countries) AC
+ Matching GNI to authors LSS
 
 
 Things to manually add to metadata:
- GDP per country (classifying developing countries) ZP
+
  impact factor quantiles from WoS _PH
  impact factor _/ ACC/ZP
  *hybrid_convert TM - no longer doing
@@ -54,4 +58,11 @@ Filter by matching OA/CA in Volume_Issue _/
  *summarizing data for OA vs Closed to make figures for:
    mean difference in total cite count with factors [JIF, field rank, # authors]
    heatmap of citations overlaying world map for location data _/ LSS
+   
+   
+Update plots for simple model factors 
+  - limit the use of violin plot
+  - readability
+  
+Add code for interaction plot JY
   
