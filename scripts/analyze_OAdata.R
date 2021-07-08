@@ -121,7 +121,7 @@ summary(mod1)
 anova(mod1)
 
 # general linear model using ln-transformed norm_cite as the response
-mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+(1|field:jour), 
+mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+pub+(1|field:jour), 
              data = datum)
 summary(mod1.log)
 anova(mod1.log)
@@ -136,7 +136,7 @@ summary(mod1.2)
 Anova(mod1.2, type = 3)
 
 # general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
-mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+pub+(1|field:jour), 
                data = datum)
 summary(mod1.2.log)
 Anova(mod1.2.log, type = 3)
