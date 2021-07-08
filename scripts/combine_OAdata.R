@@ -191,7 +191,9 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 # 3d. create new col from reprint addresses with author country
 #datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 #datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
-datum$auth_loc=ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]"))
+datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
+datum$auth_loc=ifelse(datum$corr_auth_count>1,,
+                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
 datum$auth_loc=str_trim(datum$auth_loc, side = "left")
 
 #list all countries
@@ -254,6 +256,7 @@ datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
 myCountries=unique(sort(datum$auth_loc))
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
+write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 ##### for matched: 3a. create new col(s) with univariate outliers corrected #####
 clean_cols = c('citations') # select cols to correct
