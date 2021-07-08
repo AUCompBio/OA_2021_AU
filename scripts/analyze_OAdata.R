@@ -125,6 +125,7 @@ mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+f
              data = datum)
 summary(mod1.log)
 anova(mod1.log)
+#Anova(mod1.log)
 ## Note: mod1 and mod1 with the log-transformed norm_cit response both recover the fit warning:
 ## some predictor variables are on very different scales
 
