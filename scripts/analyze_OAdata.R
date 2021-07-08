@@ -121,7 +121,7 @@ summary(mod1)
 anova(mod1)
 
 # general linear model using ln-transformed norm_cite as the response
-mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
+mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+(1|field:jour), 
              data = datum)
 summary(mod1.log)
 anova(mod1.log)
@@ -133,16 +133,18 @@ anova(mod1.log)
 mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
                data = datum)
 summary(mod1.2)
-Anova(mod1.2)
+Anova(mod1.2, type = 3)
 
 # general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
 mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
                data = datum)
 summary(mod1.2.log)
-Anova(mod1.2.log)
+Anova(mod1.2.log, type = 3)
 
+# Comparing norm_cit_log models with and without interactions
+anova(mod1.log,mod1.2.log)
 
-
+#####
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+
@@ -220,7 +222,7 @@ plot_model(mod2.5,sort.est = TRUE,show.values = TRUE,
 plot_model(mod2.5, type = 're')
 
 range(datum$AIS)
-
+#####
 
 # export results from anova to .txt file
 sink("clean_results_anova_WOS2.txt")
