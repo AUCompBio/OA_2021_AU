@@ -12,6 +12,7 @@ library(maptools)
 library(nlme)
 #install.packages('lme4')
 library(lme4)
+library(plyr)
 library(dplyr)
 #install.packages('lmerTest')
 library(lmerTest)
@@ -105,12 +106,25 @@ matched$OAlab=as.factor(matched$OAlab)
  #          data = matched, family=poisson)
 #summary(fit)
 
-#from Amanda's code
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+JCR_quart+AIS+(1|jour:vol_issue), 
+merged$field=factor(merged$field)
+merged$jour=factor(merged$jour)
+merged$vol_issue=factor(merged$vol_issue)
+
+#using citation count raw
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field:jour:vol_issue), 
                 data = matched, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
 
+#using citation advantage (need to remove vol_issue since there is one observation per vol_issue combination)
+mod2.2 <- glmer(paid_cit_diff~JCR_quart+AIS+APC+field+(1|field:jour), 
+                data = merged) #, family = gaussian(link = "identity"))
+#Warning messages:
+#  1: In glmer(paid_cit_diff ~ JCR_quart + AIS + APC + field + (1 | field:jour),  :
+#                calling glmer() with family=gaussian (identity link) as a shortcut to lmer() is deprecated; please call lmer() directly
+#              2: Some predictor variables are on very different scales: consider rescaling 
+summary(mod2.2)
+Anova(mod2.2)
 
 #quick plots
 fun <- function(x){
@@ -146,10 +160,11 @@ vplot
 
 
 #paid citation advantage per field
-vplot <- ggplot(merged,aes(x=field,y=paid_cit_diff)) +
-  geom_violin(trim=FALSE) 
+vplot <- ggplot(merged,aes(x=`5y_if_2019`,y=paid_cit_diff)) +
+  geom_violin(trim=FALSE) +
+  facet_wrap(~field)
 vplot <- vplot + ggtitle("Citation Advantage per Field") +
-  xlab("Field") + ylab("Paid Citation Difference") + 
+  xlab("field") + ylab("Paid Citation Difference") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 vplot
@@ -162,3 +177,19 @@ vplot <- vplot + ggtitle("Citation Advantage per Field") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 vplot
+
+
+#density of paid cit diff
+mu <- ddply(merged, "field", summarise, grp.mean=mean(paid_cit_diff))
+gmean=mean(merged$paid_cit_diff,na.rm=T)
+
+vplot=ggplot(merged,aes(x=paid_cit_diff))+geom_density()+
+#  geom_vline(data=merged,aes(xintercept=gmean),
+#             color="red", size=1,linetype="dashed")+
+  scale_color_manual(values=c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99",
+    "#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"))+
+    geom_vline(data=mu, aes(xintercept=grp.mean, color=field))+
+  ggtitle("Citation Advantage by Field in Matched Data") +
+  xlab("Difference in citation number (OA-non-OA)")
+
+ggsave("matched_vplot_Cit_Adv_by_Field.png", device = "png", path ="outputs/plots/", width=4,height=4)
