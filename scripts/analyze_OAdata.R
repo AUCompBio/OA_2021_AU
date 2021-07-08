@@ -88,25 +88,28 @@ datum$year <- as.factor(datum$year)
 
 
 
-# Plot histogram
-hist(datum$clean_citations) 
+# Plot histogram; estimate mean & variance for response variables
+hist(datum$clean_citations)
+mean(datum$clean_citations)
+var(datum$clean_citations)
+
 hist(datum$norm_cit) # for alternative normalization metric
 # clean citations is not normally distributed; likely should not use 
 #   linear model to fit these data. should use generalized linear model (Poisson).
-hist(datum$AIS)
-mean(datum$clean_citations)
-var(datum$clean_citations)
 mean(datum$norm_cit)
 var(datum$norm_cit) # for alternative normalization metric
 # the variance is higher than the mean, indicating an expectation of 
 #   over-dispersion in the model.
 
-# Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
-datum$norm_cit_log <- log(datum$norm_cit + 1)
-# Plot histogram and estimate mean & variance
 hist(datum$norm_cit_log)
 mean(datum$norm_cit_log)
 var(datum$norm_cit_log)
+
+hist(datum$AIS)
+hist(datum$auth_count, breaks = 100)
+
+
+
 
 # Statistical Tests ================
 
@@ -137,15 +140,16 @@ summary(mod1.2)
 Anova(mod1.2, type = 3)
 
 # general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
-mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+pub+(1|field:jour), 
+mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
                data = datum)
 summary(mod1.2.log)
 Anova(mod1.2.log, type = 3)
+# Pub is not significant-- removed from model.
 
 # Comparing norm_cit_log models with and without interactions
 anova(mod1.log,mod1.2.log)
 
-#####
+##### Poisson's that didn't converge :( #####
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+
