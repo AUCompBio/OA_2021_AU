@@ -31,14 +31,16 @@ Things to manually add to metadata:
  
 Filter by matching OA/CA in Volume_Issue _/ 
 ###### Statistical model notes #######
- add random variable of journal 
- add nesting factor for journal in research field
+ add random variable of journal _/
+ add nesting factor for journal in research field _/
  
  perform ordinary least squares linear regression with log-transformed 'normcite' variable _ TM
 
- get GLM models to converge
+ get GLM models to converge _/
     center and scale variables
-    increase number of iterations
+    increase number of iterations 
+    AC/TM -- AC went to 400,000 iterations in Rstudio, TM went to 1Mil on HPC 
+    -- Still no convergence. Concluded that model was too complex, TM concurred. 
 
  to include as fixed effects in model testing: 
   pub year _/, # of authors _/, field!, impact factor _/, 
