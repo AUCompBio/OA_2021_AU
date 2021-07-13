@@ -190,8 +190,8 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 #datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 #datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
 datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
-datum$auth_loc=ifelse(datum$corr_auth_count>1,,
-                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
+#datum$auth_loc=ifelse(datum$corr_auth_count>1,,
+#                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
 datum$auth_loc=str_trim(datum$auth_loc, side = "left")
 
 #list all countries
