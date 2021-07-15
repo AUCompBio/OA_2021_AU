@@ -190,9 +190,31 @@ datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 #datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 #datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
 datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
-#datum$auth_loc=ifelse(datum$corr_auth_count>1,,
+#datum$auth_loc=ifelse(datum$corr_auth_count>1,NA,
 #                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
-datum$auth_loc=str_trim(datum$auth_loc, side = "left")
+#datum$auth_loc=str_trim(datum$auth_loc, side = "left")
+
+#test out code to extract multiple countries for one pub (use max value 19 as test)
+#test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
+auth_loc_new=vector(length = length(datum$corrAuth_loc))
+
+for (t in 1: length(datum$corrAuth_loc)) {
+
+  test2=unlist(strsplit(datum$corrAuth_loc[t], ";"))
+  test3=vector(length=length(test2))
+  
+  for (i in 1:length(test2)) {
+    test3[i]=ifelse(str_detect(test2[i],"corresponding author"),ifelse(str_detect(test2[i],"USA"),str_remove(word(test2[i], -1),"[.]"),str_remove(gsub(".*,","",test2[i]),"[.]")),NA)
+    test3[i]=str_trim(test3[i], side = "left")
+    }
+  
+  #get unique non-NA values
+  test4=unique(sort(na.omit(test3)))
+  #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
+  auth_loc_new[t]=ifelse(length(test4)==1,test4,NA)
+}
+
+datum$auth_loc_new=auth_loc_new
 
 #list all countries
 myCountries=unique(sort(datum$auth_loc))
