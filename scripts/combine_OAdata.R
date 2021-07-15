@@ -219,7 +219,8 @@ for (t in 1: length(datum$corrAuth_loc)) {
 datum$auth_loc_new=auth_loc_new
 
 #list all countries
-myCountries=unique(sort(datum$auth_loc))
+myCountries=unique(sort(datum$auth_loc_new))
+write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 #match with country list for maptools package
 data("wrld_simpl")
@@ -278,7 +279,6 @@ datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
 myCountries=unique(sort(datum$auth_loc))
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
-write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 ##### for matched: 3a. create new col(s) with univariate outliers corrected #####
 clean_cols = c('citations') # select cols to correct
