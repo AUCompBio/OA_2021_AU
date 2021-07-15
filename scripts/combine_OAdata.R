@@ -17,6 +17,10 @@ library(readr)
 library(data.table)
 # install.packages('maptools')
 library(maptools)
+#install.packages('doBy')
+library(doBy)
+#install.packages('reshape2')
+library(reshape2)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
@@ -198,7 +202,7 @@ datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";
 
 #test out code to extract multiple countries for one pub (use max value 19 as test)
 #test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
-auth_loc_new=vector(length = length(datum$corrAuth_loc))
+auth_loc=vector(length = length(datum$corrAuth_loc))
 
 for (t in 1: length(datum$corrAuth_loc)) {
 
@@ -213,13 +217,13 @@ for (t in 1: length(datum$corrAuth_loc)) {
   #get unique non-NA values
   test4=unique(sort(na.omit(test3)))
   #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
-  auth_loc_new[t]=ifelse(length(test4)==1,test4,NA)
+  auth_loc[t]=ifelse(length(test4)==1,test4,NA)
 }
 
-datum$auth_loc_new=auth_loc_new
+datum$auth_loc=auth_loc
 
 #list all countries
-myCountries=unique(sort(datum$auth_loc_new))
+myCountries=unique(sort(datum$auth_loc))
 write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 #match with country list for maptools package
@@ -341,3 +345,36 @@ datum <- left_join(datum, md, by = "jour")
 matched <- left_join(matched, md, by = "jour")
 write_csv(datum, file = "data/OA_data_fin.csv")
 write_csv(matched, file = "data/matched_OA_data_fin.csv")
+
+# 6. Make data tables
+t1=datum[,c("year","jour","field","norm_cit","OAlab")]
+t1$jour=as.factor(t1$jour)
+t1$art=1
+#des=summaryBy(norm_cit+art~field+OAlab,data=t1,FUN=c(length,sum))
+
+num.art=summaryBy(norm_cit+art~field+jour,data=t1,FUN=c(mean,length,sum))
+colnames(num.art)=c("field","jour","mean citations", "jour_count","Number articles","dup","Number citations","dup2")
+
+num.jour=summaryBy(jour_count+`mean citations`+`Number articles`+`Number citations`~field,data=num.art,FUN=c(mean,length,sum))
+#num.jour$mean_cit=num.jour$`Number citations.sum`/num.jour$`Number articles.sum`
+table1=num.jour[,c("field","jour_count.length","Number articles.sum")]
+
+#get mean cit per access type
+num.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = length)
+sum.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = sum)
+mean.cit=cbind(num.cit,sum.cit)
+colnames(mean.cit)=c("field","Bronze","Closed Access","Green","Other Gold","field2","Bronze2","Closed Access2","Green2","Other Gold2")
+
+mean.cit$Bronze.mean=mean.cit$Bronze2/mean.cit$Bronze
+mean.cit$CA.mean=mean.cit$`Closed Access2`/mean.cit$`Closed Access`
+mean.cit$Green.mean=mean.cit$Green2/mean.cit$Green
+mean.cit$OA.mean=mean.cit$`Other Gold2`/mean.cit$`Other Gold`
+
+table1$Bronze=round(mean.cit$Bronze.mean,2)
+table1$`Closed Access`=round(mean.cit$CA.mean,2)
+table1$Green=round(mean.cit$Green.mean,2)
+table1$`Other Gold`=round(mean.cit$OA.mean,2)
+
+colnames(table1)=c("Field","Number of Journals","Number of Articles","Bronze","Closed Access","Green","Other Gold")
+
+write.csv(table1,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F)
