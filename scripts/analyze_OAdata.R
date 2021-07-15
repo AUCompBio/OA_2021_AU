@@ -236,7 +236,33 @@ print(confint(model))
 sink()  # returns output to the console
 
 # Plotting ============
-#  comments
+
+# reset vars
+datum$APC = as.numeric(datum$APC)
+datum$norm_cit = as.numeric(datum$norm_cit)
+datum$jour = as.character(datum$jour)
+
+# subset datum by auth_count
+tdatum = subset(datum, jour == c('BRAIN',
+                                 'ZOOLOGY',
+                                 'ZEBRAFISH'))
+tdatum$group = as.character(tdatum$group)
+
+# bivar scatter: X x Y x Z
+ggplot(tdatum, aes(x=APC,
+                   y=norm_cit,
+                  col=group)) +
+  geom_point(col='gray') + 
+  geom_smooth(method="lm", se=FALSE, size=.5) + 
+  geom_abline(aes(intercept=0, 
+                  slope=1),
+              data=datum, size=1, 
+              linetype='longdash')
+
+
+
+
+
 
 #compute data summary to add to plot
 data_summary <- function (datum) {
