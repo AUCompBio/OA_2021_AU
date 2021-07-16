@@ -375,6 +375,20 @@ table1$`Closed Access`=round(mean.cit$CA.mean,2)
 table1$Green=round(mean.cit$Green.mean,2)
 table1$`Other Gold`=round(mean.cit$OA.mean,2)
 
+#get grand means
+bronze=sum(mean.cit$Bronze2)/sum(mean.cit$Bronze)
+CA=sum(mean.cit$`Closed Access2`)/sum(mean.cit$`Closed Access`)
+green=sum(mean.cit$Green2)/sum(mean.cit$Green)
+OG=sum(mean.cit$`Other Gold2`)/sum(mean.cit$`Other Gold`)
+
+#add col names
 colnames(table1)=c("Field","Number of Journals","Number of Articles","Bronze","Closed Access","Green","Other Gold")
 
-write.csv(table1,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F)
+#make row for totals and grand means
+totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(bronze,2),round(CA,2),round(green,2),round(OG,2))
+
+#rbind totals to table1
+table1_new=rbind(table1,totals)
+
+#output table
+write.csv(table1_new,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F)
