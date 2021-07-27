@@ -25,8 +25,7 @@ Things to edit for fin dataframe:
 
 
 Things to manually add to metadata:
- impact factor/citation indicator quantiles from clarivate _/PH
-  *JCI(journal citation indicator) does not span the years of dataset _/
+ impact factor quantiles from WoS _PH
  impact factor _/ ACC/ZP
  grant/funding(research field ranking replaced this) _/ LSS
  journal country _/ SB
