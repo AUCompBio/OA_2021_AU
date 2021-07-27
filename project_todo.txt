@@ -25,7 +25,8 @@ Things to edit for fin dataframe:
 
 
 Things to manually add to metadata:
- impact factor quantiles from WoS _PH
+ impact factor/citation indicator quantiles from clarivate _/PH
+  *JCI(journal citation indicator) does not span the years of dataset _/
  impact factor _/ ACC/ZP
  grant/funding(research field ranking replaced this) _/ LSS
  journal country _/ SB
@@ -33,11 +34,17 @@ Things to manually add to metadata:
  *Decide on minimum number of records per author country of origin
  
 Filter by matching OA/CA in Volume_Issue _/ 
+
+
+
 ###### Statistical model notes #######
+ R script: testing for collinearity amongst parameters TM/AC 
+ Find data groups with 0 to few citations
+ 
  add random variable of journal _/
  add nesting factor for journal in research field _/
- 
-perform ordinary least squares linear regression with log-transformed 'normcite' variable _/ TM
+
+  perform ordinary least squares linear regression with log-transformed 'normcite'  variable _/ TM
 
  get GLM models to converge _/
     center and scale variables
@@ -52,6 +59,8 @@ perform ordinary least squares linear regression with log-transformed 'normcite'
  -naturally, the categorical variables of field, auth & jour loc are being compared to the first level
  (will need to recode to compare to the mean- otherwise I don't think we can make meaningful interpretations) _/
  -should we also normalize some of these variables? _/
+ 
+ 
  
  
 #### Plotting notes ####
