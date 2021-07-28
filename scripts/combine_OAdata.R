@@ -349,43 +349,39 @@ write_csv(matched, file = "data/matched_OA_data_fin.csv")
 # 6. Make data tables
 t1=datum[,c("year","jour","field","norm_cit","OAlab")]
 t1$jour=as.factor(t1$jour)
+
+#make dummy column to count articles
 t1$art=1
-#des=summaryBy(norm_cit+art~field+OAlab,data=t1,FUN=c(length,sum))
 
-num.art=summaryBy(norm_cit+art~field+jour,data=t1,FUN=c(mean,length,sum))
-colnames(num.art)=c("field","jour","mean citations", "jour_count","Number articles","dup","Number citations","dup2")
+#use art column to get sum of articles by field/journal
+num.art=summaryBy(art~field+jour,data=t1,FUN=c(mean,sum))
+colnames(num.art)=c("field","jour","jour_count","Number articles")
 
-num.jour=summaryBy(jour_count+`mean citations`+`Number articles`+`Number citations`~field,data=num.art,FUN=c(mean,length,sum))
-#num.jour$mean_cit=num.jour$`Number citations.sum`/num.jour$`Number articles.sum`
-table1=num.jour[,c("field","jour_count.length","Number articles.sum")]
+#further summarize by field to get journal count and article count by field
+num.jour=summaryBy(jour_count+`Number articles`~field,data=num.art,FUN=c(sum))
+
+#add a column for the matched data
+t1m=matched[,c("year","jour","field","norm_cit","OAlab")]
+t1m$jour=as.factor(t1m$jour)
+t1m$art=1
+num.art3=summaryBy(art~field+jour,data=t1m,FUN=c(mean,sum))
+colnames(num.art3)=c("field","jour","jour_count","Number articles")
+num.jour2=summaryBy(jour_count+`Number articles`~field,data=num.art3,FUN=c(sum))
+
+#remove NA field (need to fix later!)
+num.jour2=num.jour2[complete.cases(num.jour2),]
+table1=cbind(num.jour,num.jour2$`Number articles.sum`)
 
 #get mean cit per access type
-num.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = length)
-sum.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = sum)
-mean.cit=cbind(num.cit,sum.cit)
-colnames(mean.cit)=c("field","Bronze","Closed Access","Green","Other Gold","field2","Bronze2","Closed Access2","Green2","Other Gold2")
+num.art2=dcast(t1,field~OAlab,value.var="art",fun.aggregate = length)
 
-mean.cit$Bronze.mean=mean.cit$Bronze2/mean.cit$Bronze
-mean.cit$CA.mean=mean.cit$`Closed Access2`/mean.cit$`Closed Access`
-mean.cit$Green.mean=mean.cit$Green2/mean.cit$Green
-mean.cit$OA.mean=mean.cit$`Other Gold2`/mean.cit$`Other Gold`
-
-table1$Bronze=round(mean.cit$Bronze.mean,2)
-table1$`Closed Access`=round(mean.cit$CA.mean,2)
-table1$Green=round(mean.cit$Green.mean,2)
-table1$`Other Gold`=round(mean.cit$OA.mean,2)
-
-#get grand means
-bronze=sum(mean.cit$Bronze2)/sum(mean.cit$Bronze)
-CA=sum(mean.cit$`Closed Access2`)/sum(mean.cit$`Closed Access`)
-green=sum(mean.cit$Green2)/sum(mean.cit$Green)
-OG=sum(mean.cit$`Other Gold2`)/sum(mean.cit$`Other Gold`)
+table1=cbind(table1,num.art2[,2:5])
 
 #add col names
-colnames(table1)=c("Field","Number of Journals","Number of Articles","Bronze","Closed Access","Green","Other Gold")
+colnames(table1)=c("Field","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
 
 #make row for totals and grand means
-totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(bronze,2),round(CA,2),round(green,2),round(OG,2))
+totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(sum(table1$`Number of Matched Articles`),0),sum(table1$Bronze),sum(table1$`Closed Access`),sum(table1$Green),sum(table1$`Other Gold`))
 
 #rbind totals to table1
 table1_new=rbind(table1,totals)
