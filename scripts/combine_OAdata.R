@@ -380,6 +380,11 @@ table1=cbind(table1,num.art2[,2:5])
 #add col names
 colnames(table1)=c("Field","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
 
+#fix field names
+table1$Field=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
+               "Marine & Freshwater Biology","Microbiology","Mycology","Neurosciences & Neurology","Oncology",         
+               "Plant Sciences","Zoology")
+
 #make row for totals and grand means
 totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(sum(table1$`Number of Matched Articles`),0),sum(table1$Bronze),sum(table1$`Closed Access`),sum(table1$Green),sum(table1$`Other Gold`))
 
