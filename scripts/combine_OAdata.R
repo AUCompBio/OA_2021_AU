@@ -378,7 +378,7 @@ num.art2=dcast(t1,field~OAlab,value.var="art",fun.aggregate = length)
 table1=cbind(table1,num.art2[,2:5])
 
 #add col names
-colnames(table1)=c("Field","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
+colnames(table1)=c("Research Area","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
 
 #fix field names
 table1$Field=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",

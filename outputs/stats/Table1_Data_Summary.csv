@@ -1,14 +1,14 @@
-Field,Number of Journals,Number of Articles,Number of Matched Articles,Bronze,Closed Access,Green,Other Gold
-Biochemistry & Molecular Biology,1,11286,9590,28,9799,969,490
-Cell Biology,4,4575,43,3868,10,50,647
-Entomology,8,5777,2760,380,4669,445,283
-Evolutionary Biology,16,16061,5286,8133,4806,1186,1936
-Genetics & Heredity,6,7190,934,2512,1016,232,3430
-Marine & Freshwater Biology,6,8708,5048,77,7812,549,270
-Microbiology,8,21921,2265,18700,720,581,1920
-Mycology,16,7099,2696,1059,5116,346,578
-Neurosciences & Neurology,5,6465,3758,2707,1510,927,1321
-Oncology,5,16152,4126,9250,1413,898,4591
-Plant Sciences,7,9928,1648,7005,1603,144,1176
-Zoology,70,31253,10269,4286,22643,2934,1390
-Totals,152,146415,48423,58005,61117,9261,18032
+Research Area,Number of Journals,Number of Articles,Number of Matched Articles,Bronze,Closed Access,Green,Other Gold,Field
+Biochemistry & Molecular Biology,1,11286,9590,28,9799,969,490,Biochemistry & Molecular Biology
+Cell Biology,4,4575,43,3868,10,50,647,Cell Biology
+Entomology,8,5777,2760,380,4669,445,283,Entomology
+Evolutionary Biology,16,16061,5286,8133,4806,1186,1936,Evolutionary Biology
+Genetics & Heredity,6,7190,934,2512,1016,232,3430,Genetics & Heredity
+Marine & Freshwater Biology,6,8708,5048,77,7812,549,270,Marine & Freshwater Biology
+Microbiology,8,21921,2265,18700,720,581,1920,Microbiology
+Mycology,16,7099,2696,1059,5116,346,578,Mycology
+Neurosciences & Neurology,5,6465,3758,2707,1510,927,1321,Neurosciences & Neurology
+Oncology,5,16152,4126,9250,1413,898,4591,Oncology
+Plant Sciences,7,9928,1648,7005,1603,144,1176,Plant Sciences
+Zoology,70,31253,10269,4286,22643,2934,1390,Zoology
+Totals,152,146415,48423,58005,61117,9261,18032,Totals
