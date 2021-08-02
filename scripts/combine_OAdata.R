@@ -369,7 +369,7 @@ colnames(num.art3)=c("field","jour","jour_count","Number articles")
 num.jour2=summaryBy(jour_count+`Number articles`~field,data=num.art3,FUN=c(sum))
 
 #remove NA field (need to fix later!)
-num.jour2=num.jour2[complete.cases(num.jour2),]
+#num.jour2=num.jour2[complete.cases(num.jour2),]
 table1=cbind(num.jour,num.jour2$`Number articles.sum`)
 
 #get mean cit per access type
@@ -381,7 +381,7 @@ table1=cbind(table1,num.art2[,2:5])
 colnames(table1)=c("Research Area","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
 
 #fix field names
-table1$Field=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
+table1$`Research Area`=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
                "Marine & Freshwater Biology","Microbiology","Mycology","Neurosciences & Neurology","Oncology",         
                "Plant Sciences","Zoology")
 
