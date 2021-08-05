@@ -62,7 +62,7 @@ datum$pub <- as.factor(datum$pub)
 #datum$year <- as.factor(datum$year)
 
 # write.csv(x=datum_filtered, file="data/OA_data_fiveormore_records.csv", row.names=FALSE, quote=FALSE)
-datum_filtered <- datum %>% filter(citations > 4)
+datum_filtered <- datum %>% filter(citations > 4) %>% filter(field != "CellBio") 
 names(datum_filtered)
 head(datum_filtered)
 summary(datum_filtered)
