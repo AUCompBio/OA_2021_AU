@@ -95,16 +95,7 @@ datum_filtered$norm_cit_log <- log(datum_filtered$norm_cit + 1)
 datum$year <- as.factor(datum$year)
 datum_filtered$year <- as.factor(datum_filtered$year)
 
-# Data Exploration  ================
-ls.str(datum_filtered)
-#need to id variables I want as a factor
-datum_filtered$jour <- as.factor(datum_filtered$jour)
-datum_filtered$OAlab <- as.factor(datum_filtered$OAlab)
-datum_filtered$field <- as.factor(datum_filtered$field)
-datum_filtered$jour_loc <- as.factor(datum_filtered$jour_loc)
-datum_filtered$JCR_quart <- as.factor(datum_filtered$JCR_quart)
-datum_filtered$pub <- as.factor(datum_filtered$pub)
-datum_filtered$year <- as.factor(datum_filtered$year)
+# Data Exploration  ===============
 
 
 # Plot histogram; estimate mean & variance for response variables
@@ -115,9 +106,6 @@ mean(datum_filtered$clean_citations)
 mean(datum$clean_citations)
 var(datum_filtered$clean_citations)
 var(datum$clean_citations)
-
-
-
 
 
 hist(datum_filtered$norm_cit) # for alternative normalization metric
@@ -147,26 +135,27 @@ contrasts(datum_filtered$field) = contr.sum(12)
 contrasts(datum_filtered$year) = contr.sum(6)
 
 # general linear model using norm_cite as the response
-mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
+## As of 8/5/2021, both this script and `analyze_OAdata.R` excluded the variable "pub" from mod1. TM corrected that
+mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+pub+(1|field:jour), 
              data = datum_filtered)
 summary(mod1)
 anova(mod1)
 
 # general linear model using ln-transformed norm_cite as the response
-mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+pub+(1|field:jour), 
+mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+pub+(1|field:jour), 
                  data = datum_filtered)
 summary(mod1.log)
 anova(mod1.log)
 
 
 # general linear model using norm_cite as the response. Including interactions for access by field and author count by APC
-mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count+JCR_quart+AIS+year+(1|field:jour), 
                data = datum_filtered)
 summary(mod1.2)
 Anova(mod1.2, type = 3)
 
 # general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
-mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count+JCR_quart+AIS+year+(1|field:jour), 
                    data = datum_filtered)
 summary(mod1.2.log)
 Anova(mod1.2.log, type = 3)
@@ -184,6 +173,7 @@ mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+
 summary(mod2.1)
 Anova(mod2.1)
 
+########## Failed to converge too
 # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
