@@ -192,6 +192,7 @@ datum$OAlab = ifelse(grepl('Gold', datum$OAdes),
                                                  ifelse(grepl('^$', datum$OAdes), 'Closed Access', 'Error'))))
 # 3c. create new col from authors with count
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
+
 # 3d. create new col from reprint addresses with author country
 #datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
 #datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
@@ -200,13 +201,24 @@ datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";
 #                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
 #datum$auth_loc=str_trim(datum$auth_loc, side = "left")
 
+#read in GNI data to match with corresponding author countries
+gni=read.csv(file="data/GNI.Percapita_reduced.csv",header=T,stringsAsFactors = T)
+
+#read in map data
+data("wrld_simpl")
+
+#make two column data frame with country names and 3 letter codes
+countries=data.frame(wrld_simpl@data$NAME,wrld_simpl@data$ISO3)
+
 #test out code to extract multiple countries for one pub (use max value 19 as test)
 #test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
 auth_loc=vector(length = length(datum$corrAuth_loc))
+corrAuth_code=vector(length = length(datum$corrAuth_loc))
+corrAuth_gni=vector(length = length(datum$corrAuth_loc))
 
-for (t in 1: length(datum$corrAuth_loc)) {
+for (t in 1:length(datum$corrAuth_loc)) {
 
-  test2=unlist(strsplit(datum$corrAuth_loc[t], ";"))
+  test2=unlist(strsplit(as.character(datum$corrAuth_loc[t]), ";"))
   test3=vector(length=length(test2))
   
   for (i in 1:length(test2)) {
@@ -217,72 +229,60 @@ for (t in 1: length(datum$corrAuth_loc)) {
   #get unique non-NA values
   test4=unique(sort(na.omit(test3)))
   #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
-  auth_loc[t]=ifelse(length(test4)==1,test4,NA)
+  #auth_loc[t]=ifelse(length(test4)==1,test4,NA)
+  coun_codes=vector(length=length(test4))
+  max_gni=vector(length=length(test4))
+  for (u in 1:length(test4)) {
+
+    #ugly ifelse nest to rename countries
+    test4[u]=ifelse(test4[u]=='Republic','Czech Republic',ifelse(test4[u]=='Zealand','New Zealand',
+    ifelse(test4[u]=='USA','United States',ifelse(test4[u]=='DEM REP CONGO','Congo',
+    ifelse(test4[u]=='BELARUS','Belarus',ifelse(test4[u]=='Rep Congo','Congo',ifelse(test4[u]=='Vietnam','Viet Nam',
+    ifelse(test4[u]=='Wales','United Kingdom',ifelse(test4[u]=='U Arab Emirates','United Arab Emirates',
+    ifelse(test4[u]=='Turks & Caicos','Turks and Caicos Islands',ifelse(test4[u]=='Trinidad Tobago','Trinidad and Tobago',
+    ifelse(test4[u]=='Tanzania','United Republic of Tanzania',ifelse(test4[u]=='Syria','Syrian Arab Republic',
+    ifelse(test4[u]=='St Vincent','Saint Vincent and the Grenadines',ifelse(test4[u]=='St Kitts & Nevi','Saint Kitts and Nevis',
+    ifelse(test4[u]=='Scotland','United Kingdom',ifelse(test4[u]=='Arabia','Saudi Arabia',ifelse(test4[u]=='Myanmar','Burma',
+    ifelse(test4[u]=='Laos','Lao People\'s Democratic Republic',ifelse(test4[u]=='Libya','Libyan Arab Jamahiriya',
+    ifelse(test4[u]=='Peoples R China','China',ifelse(test4[u]=='England','United Kingdom',
+    ifelse(test4[u]=='Papua N Guinea','Papua New Guinea',ifelse(test4[u]=='Ascension Isl','United Kingdom',
+    ifelse(test4[u]=='Bonaire','Netherlands',ifelse(test4[u]=='Bosnia & Herceg','Bosnia and Herzegovina',
+    ifelse(test4[u]=='Brunei','Brunei Darussalam',ifelse(test4[u]=='Emirates','United Arab Emirates',
+    ifelse(test4[u]=='South Korea','Korea, Republic of',ifelse(test4[u]=='Rica','Costa Rica',
+    ifelse(test4[u]=='Macedonia','The former Yugoslav Republic of Macedonia',
+    ifelse(test4[u]=='North Macedonia','The former Yugoslav Republic of Macedonia',
+    ifelse(test4[u]=='North Ireland','United Kingdom',ifelse(test4[u]=='Moldova','Republic of Moldova',
+    ifelse(test4[u]=='Kosovo','Serbia',ifelse(test4[u]=='Korea','Korea, Republic of',
+    ifelse(test4[u]=='Iran','Iran (Islamic Republic of)',ifelse(test4[u]=='Guinea Bissau','Guinea-Bissau',
+    ifelse(test4[u]=='Falkland Island','Falkland Islands (Malvinas)',ifelse(test4[u]=='Eswatini','Swaziland',
+    ifelse(test4[u]=='Curacao','Netherlands Antilles',ifelse(test4[u]=='Cote Ivoire','Cote d\'Ivoire',
+    ifelse(test4[u]=='Cent Afr Republ','Central African Republic',ifelse(test4[u]=='Africa','South Africa',test4[u]))))))))))))))))))))))))))))))))))))))))))))
+    
+    test5=ifelse(length(as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))==0,NA,as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))
+
+    coun_codes[u]=test5
+    max_gni[u]=ifelse(length(gni$AVG_2013.2018[gni$Country.Code==test5])==0,NA,gni$AVG_2013.2018[gni$Country.Code==test5])
+  }
+  corrAuth_gni[t]=ifelse(all(is.na(max_gni)),NA,ifelse(length(max_gni)==1,max_gni,max(max_gni,na.rm=T)))
+  corrAuth_code[t]=ifelse(is.na(corrAuth_gni[t]),coun_codes[1],ifelse(length(coun_codes)==1,coun_codes,coun_codes[which(max_gni==corrAuth_gni[t])[[1]]]))
+  auth_loc[t]=ifelse(is.na(corrAuth_gni[t]),test4[1],ifelse(length(test4)==1,test4,test4[which(max_gni==corrAuth_gni[t])[[1]]]))
 }
 
+#three new columns to datum
 datum$auth_loc=auth_loc
+datum$corrAuth_gni=corrAuth_gni
+datum$corrAuth_code=corrAuth_code
 
 #list all countries
 myCountries=unique(sort(datum$auth_loc))
-write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
+#write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 
 #match with country list for maptools package
-data("wrld_simpl")
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 
-#list countries not in list
+#list countries not in list; sanity check! All should already be in the list from nasty ifelse statement within the loop!
 myCountries[CountryIntersect==FALSE]
 
-#correct countries without a match in datafile
-datum$auth_loc[datum$auth_loc=='Zealand'] = 'New Zealand'
-datum$auth_loc[datum$auth_loc=='DEM REP CONGO'] = 'Congo'
-datum$auth_loc[datum$auth_loc=='BELARUS'] = 'Belarus'
-datum$auth_loc[datum$auth_loc=='USA'] = 'United States'
-datum$auth_loc[datum$auth_loc=='Rep Congo'] = 'Congo'
-datum$auth_loc[datum$auth_loc=='Vietnam'] = 'Viet Nam'
-datum$auth_loc[datum$auth_loc=='Wales'] = 'United Kingdom'
-datum$auth_loc[datum$auth_loc=='U Arab Emirates'] = 'United Arab Emirates'
-datum$auth_loc[datum$auth_loc=='Turks & Caicos'] = 'Turks and Caicos Islands'
-datum$auth_loc[datum$auth_loc=='Trinidad Tobago'] = 'Trinidad and Tobago'
-datum$auth_loc[datum$auth_loc=='Tanzania'] = 'United Republic of Tanzania'
-datum$auth_loc[datum$auth_loc=='Syria'] = 'Syrian Arab Republic'
-datum$auth_loc[datum$auth_loc=='St Vincent'] = 'Saint Vincent and the Grenadines'
-datum$auth_loc[datum$auth_loc=='St Kitts & Nevi'] = 'Saint Kitts and Nevis'
-datum$auth_loc[datum$auth_loc=='Scotland'] = 'United Kingdom'
-datum$auth_loc[datum$auth_loc=='Arabia'] = 'Saudi Arabia'
-datum$auth_loc[datum$auth_loc=='Myanmar'] = 'Burma'
-datum$auth_loc[datum$auth_loc=='Laos'] = 'Lao People\'s Democratic Republic'
-datum$auth_loc[datum$auth_loc=='Libya'] = 'Libyan Arab Jamahiriya'
-datum$auth_loc[datum$auth_loc=='Peoples R China'] = 'China'
-datum$auth_loc[datum$auth_loc=='England'] = 'United Kingdom'
-datum$auth_loc[datum$auth_loc=='Papua N Guinea'] = 'Papua New Guinea'
-datum$auth_loc[datum$auth_loc=='Ascension Isl'] = 'United Kingdom'
-datum$auth_loc[datum$auth_loc=='Bonaire'] = 'Netherlands'
-datum$auth_loc[datum$auth_loc=='Bosnia & Herceg'] = 'Bosnia and Herzegovina'
-datum$auth_loc[datum$auth_loc=='Brunei'] = 'Brunei Darussalam'
-datum$auth_loc[datum$auth_loc=='Emirates'] = 'United Arab Emirates'
-datum$auth_loc[datum$auth_loc=='South Korea'] = 'Korea, Republic of'
-datum$auth_loc[datum$auth_loc=='Rica'] = 'Costa Rica'
-datum$auth_loc[datum$auth_loc=='Macedonia'] = 'The former Yugoslav Republic of Macedonia'
-datum$auth_loc[datum$auth_loc=='North Macedonia'] = 'The former Yugoslav Republic of Macedonia'
-datum$auth_loc[datum$auth_loc=='Republic'] = 'Czech Republic'
-datum$auth_loc[datum$auth_loc=='North Ireland'] = 'United Kingdom'
-datum$auth_loc[datum$auth_loc=='Moldova'] = 'Republic of Moldova'
-datum$auth_loc[datum$auth_loc=='Kosovo'] = 'Serbia'
-datum$auth_loc[datum$auth_loc=='Korea'] = 'Korea, Republic of'
-datum$auth_loc[datum$auth_loc=='Iran'] = 'Iran (Islamic Republic of)'
-datum$auth_loc[datum$auth_loc=='Guinea Bissau'] = 'Guinea-Bissau'
-datum$auth_loc[datum$auth_loc=='Falkland Island'] = 'Falkland Islands (Malvinas)'
-datum$auth_loc[datum$auth_loc=='Eswatini'] = 'Swaziland'
-datum$auth_loc[datum$auth_loc=='Curacao'] = 'Netherlands Antilles'
-datum$auth_loc[datum$auth_loc=='Cote Ivoire'] = 'Cote d\'Ivoire'
-datum$auth_loc[datum$auth_loc=='Cent Afr Republ'] = 'Central African Republic'
-datum$auth_loc[datum$auth_loc=='Africa'] = 'South Africa'
-
-#list countries not in list (should be zero now!)
-myCountries=unique(sort(datum$auth_loc))
-CountryIntersect = myCountries %in% wrld_simpl@data$NAME
-myCountries[CountryIntersect==FALSE]
 
 ##### for matched: 3a. create new col(s) with univariate outliers corrected #####
 clean_cols = c('citations') # select cols to correct
@@ -349,43 +349,44 @@ write_csv(matched, file = "data/matched_OA_data_fin.csv")
 # 6. Make data tables
 t1=datum[,c("year","jour","field","norm_cit","OAlab")]
 t1$jour=as.factor(t1$jour)
+
+#make dummy column to count articles
 t1$art=1
-#des=summaryBy(norm_cit+art~field+OAlab,data=t1,FUN=c(length,sum))
 
-num.art=summaryBy(norm_cit+art~field+jour,data=t1,FUN=c(mean,length,sum))
-colnames(num.art)=c("field","jour","mean citations", "jour_count","Number articles","dup","Number citations","dup2")
+#use art column to get sum of articles by field/journal
+num.art=summaryBy(art~field+jour,data=t1,FUN=c(mean,sum))
+colnames(num.art)=c("field","jour","jour_count","Number articles")
 
-num.jour=summaryBy(jour_count+`mean citations`+`Number articles`+`Number citations`~field,data=num.art,FUN=c(mean,length,sum))
-#num.jour$mean_cit=num.jour$`Number citations.sum`/num.jour$`Number articles.sum`
-table1=num.jour[,c("field","jour_count.length","Number articles.sum")]
+#further summarize by field to get journal count and article count by field
+num.jour=summaryBy(jour_count+`Number articles`~field,data=num.art,FUN=c(sum))
+
+#add a column for the matched data
+t1m=matched[,c("year","jour","field","norm_cit","OAlab")]
+t1m$jour=as.factor(t1m$jour)
+t1m$art=1
+num.art3=summaryBy(art~field+jour,data=t1m,FUN=c(mean,sum))
+colnames(num.art3)=c("field","jour","jour_count","Number articles")
+num.jour2=summaryBy(jour_count+`Number articles`~field,data=num.art3,FUN=c(sum))
+
+#remove NA field (need to fix later!)
+#num.jour2=num.jour2[complete.cases(num.jour2),]
+table1=cbind(num.jour,num.jour2$`Number articles.sum`)
 
 #get mean cit per access type
-num.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = length)
-sum.cit=dcast(t1,field~OAlab,value.var="norm_cit",fun.aggregate = sum)
-mean.cit=cbind(num.cit,sum.cit)
-colnames(mean.cit)=c("field","Bronze","Closed Access","Green","Other Gold","field2","Bronze2","Closed Access2","Green2","Other Gold2")
+num.art2=dcast(t1,field~OAlab,value.var="art",fun.aggregate = length)
 
-mean.cit$Bronze.mean=mean.cit$Bronze2/mean.cit$Bronze
-mean.cit$CA.mean=mean.cit$`Closed Access2`/mean.cit$`Closed Access`
-mean.cit$Green.mean=mean.cit$Green2/mean.cit$Green
-mean.cit$OA.mean=mean.cit$`Other Gold2`/mean.cit$`Other Gold`
-
-table1$Bronze=round(mean.cit$Bronze.mean,2)
-table1$`Closed Access`=round(mean.cit$CA.mean,2)
-table1$Green=round(mean.cit$Green.mean,2)
-table1$`Other Gold`=round(mean.cit$OA.mean,2)
-
-#get grand means
-bronze=sum(mean.cit$Bronze2)/sum(mean.cit$Bronze)
-CA=sum(mean.cit$`Closed Access2`)/sum(mean.cit$`Closed Access`)
-green=sum(mean.cit$Green2)/sum(mean.cit$Green)
-OG=sum(mean.cit$`Other Gold2`)/sum(mean.cit$`Other Gold`)
+table1=cbind(table1,num.art2[,2:5])
 
 #add col names
-colnames(table1)=c("Field","Number of Journals","Number of Articles","Bronze","Closed Access","Green","Other Gold")
+colnames(table1)=c("Research Area","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
+
+#fix field names
+table1$`Research Area`=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
+               "Marine & Freshwater Biology","Microbiology","Mycology","Neurosciences & Neurology","Oncology",         
+               "Plant Sciences","Zoology")
 
 #make row for totals and grand means
-totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(bronze,2),round(CA,2),round(green,2),round(OG,2))
+totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(sum(table1$`Number of Matched Articles`),0),sum(table1$Bronze),sum(table1$`Closed Access`),sum(table1$Green),sum(table1$`Other Gold`))
 
 #rbind totals to table1
 table1_new=rbind(table1,totals)
