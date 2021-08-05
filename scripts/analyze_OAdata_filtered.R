@@ -167,36 +167,35 @@ anova(mod1.log,mod1.2.log)
 ########## Failed to converge
 # Poisson regression using norm_cit as response
 # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+
-                  APC+(1|field:jour), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 summary(mod2.1)
 Anova(mod2.1)
 
 ########## Failed to converge too
 # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 summary(mod2.2)
 Anova(mod2.2)
 
 # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
-mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
+mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field:jour), 
                  data = datum_filtered, family = poisson(link = "log"))
 summary(mod2.3)
 
 # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
+mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+(1|field/jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 
 summary(mod2.4)
 # basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
 # increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
-mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
+mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)+JCR_quart+scale(AIS)+(1|field/jour), 
                 data = datum_filtered, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
 summary(mod2.5)
 
 # model with only terms that we are interested in interactions between, with random effect of journal nested in field
-mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)*scale(APC)+(1|field:jour), 
+mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 summary(mod2.6)
