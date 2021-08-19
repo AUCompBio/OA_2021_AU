@@ -189,11 +189,11 @@ Anova(mod2.1)
 # basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
 
 ## Scale continuous predictor variables
-datum_filtered$auth_count <- scale(datum_filtered$auth_count)
-datum_filtered$AIS <- scale(datum_filtered$AIS)
+datum_filtered$auth_count_scaled <- scale(datum_filtered$auth_count)
+datum_filtered$AIS_scaled <- scale(datum_filtered$AIS)
 mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+#scale(
-                  auth_count+JCR_quart+#scale(
-                  AIS+year+(1|field:jour), 
+                  auth_count_scaled+JCR_quart+#scale(
+                  AIS_scaled+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 #Warning messages:
 #1: contrasts dropped from factor field due to missing levels 
