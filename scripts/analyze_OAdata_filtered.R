@@ -134,7 +134,7 @@ hist(datum$auth_count, breaks=100)
 # Statistical Tests ================
 
 # Recode categorical fields (deviation- compares level to grand mean)
-contrasts(datum_filtered$field) = contr.sum(12)
+contrasts(datum_filtered$field) = contr.sum(11) # Was 12 before removing Cell Bio
 contrasts(datum_filtered$year) = contr.sum(6)
 
 # general linear model using norm_cite as the response
@@ -186,8 +186,14 @@ summary(mod2.1)
 Anova(mod2.1)
 
 ########## Failed to converge too
-# basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+year+(1|field:jour), 
+# basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
+
+## Scale continuous predictor variables
+datum_filtered$auth_count <- scale(datum_filtered$auth_count)
+datum_filtered$AIS <- scale(datum_filtered$AIS)
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+#scale(
+                  auth_count+JCR_quart+#scale(
+                  AIS+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 #Warning messages:
 #1: contrasts dropped from factor field due to missing levels 
@@ -197,7 +203,7 @@ mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_
 #                  Model is nearly unidentifiable: very large eigenvalue
 #                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
 #                - Rescale variables?
-summary(mod2.2)
+#summary(mod2.2)
 Anova(mod2.2)
 
 # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
