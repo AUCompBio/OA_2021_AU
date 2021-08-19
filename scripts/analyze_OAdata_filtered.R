@@ -43,6 +43,8 @@ library(car)
 
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+# Removing Cell Bio to see if this will alleviate "missing levels" warning
+datum <-datum %>% filter(field != "CellBio") 
 
 # check data
 names(datum)
@@ -52,24 +54,25 @@ summary(datum)
 
 # Data Exploration  ================
 ls.str(datum)
-#need to id variables I want as a factor
+
+# Change variables to factors
+ ## need to id variables I want as a factor
 datum$jour <- as.factor(datum$jour)
 datum$OAlab <- as.factor(datum$OAlab)
 datum$field <- as.factor(datum$field)
 datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
 datum$pub <- as.factor(datum$pub)
-#datum$year <- as.factor(datum$year)
 
-# write.csv(x=datum_filtered, file="data/OA_data_fiveormore_records.csv", row.names=FALSE, quote=FALSE)
-datum_filtered <- datum %>% filter(citations > 4) %>% filter(field != "CellBio") 
+# Now, filter out records with fewer than 5 citations
+  ## Commented out removal of Cell Bio here because it was removed from "datum" object after loading
+datum_filtered <- datum %>% filter(citations > 4) # %>% filter(field != "CellBio") 
 names(datum_filtered)
 head(datum_filtered)
 summary(datum_filtered)
 ls.str(datum_filtered)
 
-# Re-do steps to create norm_cit and norm_cit_log variables from `combine_OAdata.R`
-# for filtered dataframe
+# Re-do steps to create norm_cit and norm_cit_log variables from `combine_OAdata.R` for filtered dataframe
 
 #a slightly different approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(datum_filtered$citations~datum_filtered$year)
