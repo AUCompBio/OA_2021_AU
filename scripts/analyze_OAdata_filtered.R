@@ -35,6 +35,8 @@ library(lme4)
 library(lmerTest)
 #install.packages('car')
 library(car)
+#install.packages("numDeriv")
+library(numDeriv)
 
 # Below code used to generate dataframe excluding all records with fewer than 5 citations
   # datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
@@ -185,48 +187,67 @@ mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+
 summary(mod2.1)
 Anova(mod2.1)
 
-########## Failed to converge too
-# basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
-
 ## Scale continuous predictor variables
 datum_filtered$auth_count_scaled <- scale(datum_filtered$auth_count)
 datum_filtered$AIS_scaled <- scale(datum_filtered$AIS)
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+#scale(
-                  auth_count_scaled+JCR_quart+#scale(
-                  AIS_scaled+year+(1|field:jour), 
+
+# basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+field+JCR_quart+AIS_scaled+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
-#Warning messages:
-#1: contrasts dropped from factor field due to missing levels 
-#2: contrasts dropped from factor field due to missing levels 
-#3: contrasts dropped from factor field due to missing levels 
 #4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
 #                  Model is nearly unidentifiable: very large eigenvalue
 #                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
 #                - Rescale variables?
-#summary(mod2.2)
+summary(mod2.2)
 Anova(mod2.2)
 
-# basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
-mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field:jour), 
-                 data = datum_filtered, family = poisson(link = "log"))
-summary(mod2.3)
-Anova(mod2.3)
+## Now, compare betas between mod2.1 (unscaled) and mod2.2 (scaled)
+## Get means and standard deviations for the unscaled continuous predictor variables
+unscaled_AIS_mean <- mean(datum_filtered$AIS)
+unscaled_AIS_sd <- sd(datum_filtered$AIS)
+unscaled_authcount_mean <- mean(datum_filtered$auth_count)
+unscaled_authcount_sd <- sd(datum_filtered$auth_count)
 
-# basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+(1|field/jour), 
-                data = datum_filtered, family = poisson(link = "log"))
+## This is the back-transformation that Todd Steury recommended
+  # Fixed effect for auth_count_scaled in mod2.2 is 0.042992
+  0.042992*unscaled_authcount_mean #= 0.2982747; in mod2.1 the beta is 0.007123
+  # Fixed effect for AIS_scaled is 0.292701 
+  0.292701*unscaled_AIS_mean #=0.4667202; in mod2.1 this beta is 0.218133
 
-summary(mod2.4)
-Anova(mod2.4)
-# basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-# increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
-mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)+JCR_quart+scale(AIS)+(1|field/jour), 
-                data = datum_filtered, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
-summary(mod2.5)
-Anova(mod2.5)
+### Model Diagnostics ####
 
-# model with only terms that we are interested in interactions between, with random effect of journal nested in field
-mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)+(1|field:jour), 
-                data = datum_filtered, family = poisson(link = "log"))
-summary(mod2.6)
-Anova(mod2.6)
+# Check for model's singularity  
+Theta <- getME(mod2.2, "theta")
+Low <- getME(mod2.2, "lower")
+min(Theta[Low==0])
+#[1] 0.1667936 -- Not singular
+
+# Check gradient calculations
+derivs1 <- mod2.2@optinfo$derivs
+sc_grad1 <- with(derivs1, solve(Hessian, gradient))
+max(abs(sc_grad1))
+#[1] 0.0001571038
+max(pmin(abs(sc_grad1),abs(derivs1$gradient)))
+#[1] 0.0001571038
+
+dd <- update(mod2.2,devFunOnly=TRUE)
+pars <- unlist(getME(mod2.2,c("theta","fixef")))
+grad2 <- grad(dd,pars)
+hess2 <- hessian(dd,pars)
+sc_grad2 <- solve(hess2,grad2)
+max(pmin(abs(sc_grad2),abs(grad2)))
+#[1] 0.0006343064
+
+# Restart
+ss <- getME(mod2.2, c("theta", "fixef"))
+mod2.3 <- update(mod2.2, start=ss, control=glmerControl(optCtrl = list(maxfun=2e4)))
+#Warning message:
+#In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#Model is nearly unidentifiable: very large eigenvalue
+#- Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#- Rescale variables?
+
+mod2.4 <- update(mod2.2, start=ss, control=glmerControl(optimizer = "bobyqa",
+                                                        optCtrl = list(maxfun=2e5)))
+mod2.5 <- update(mod2.2, start=ss, control=glmerControl(optimizer = "nloptwrap",
+                                                        optCtrl = list(maxfun=2e5)))
