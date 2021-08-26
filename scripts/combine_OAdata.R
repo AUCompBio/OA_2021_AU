@@ -29,7 +29,6 @@ dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
 datumlist = list()
 
 # loop thru 'dirnames', import files, append to 'datum'
-ptm <- proc.time() #Start time
 for (dir in dirnames) {
   templist = list.files(path=dir, pattern='/*.xls')
   tempdatum = ldply(paste(dir,templist,sep='/'), read_excel)
@@ -38,11 +37,7 @@ for (dir in dirnames) {
 datum <- as.data.frame(rbindlist(datumlist))
 # Replacing NA with blanks for OA column (necessary for matching)
 datum$`Open Access Designations`= replace_na(datum$`Open Access Designations`, "")
-proc.time() - ptm #Time elapsed
 
-# Exporting journal names to a csv for validation and matching
-#journals <- data.frame(unique(datum$`Source Title`))
-#write_csv(journals, file = "output/tables/jourlist.csv")
 
 # OA/CA Matched Issues =========
 # Functions and subsequent code to produce OA/CA matched issues dataframe
@@ -52,9 +47,9 @@ matchbytibble <- function(tibs) {
   # OA designation patterns needed to match; using grep so regex should work 
   patt <- c("^$", "Other Gold")
   # Check for Other Gold in the designation field
-  ckgold <- any(grepl(patt[[2]],tibs$`Open Access Designations`))
+  ckgold <- any(grepl(patt[[2]],tibs$OAdes))
   # Check for blanks in the designation field
-  ckblank <- any(grepl(patt[[1]],tibs$`Open Access Designations`))
+  ckblank <- any(grepl(patt[[1]],tibs$OAdes))
   
   # If ckgold & ckblank evaluate at TRUE...else...
   if (ckgold == TRUE && ckblank == TRUE) {
@@ -72,10 +67,10 @@ splitbyjournal <- function(journal) {
   # OA designation patterns needed to match; using grep so regex should work 
   patt <- c("^$", "Other Gold")
   # subset single journal in dataset
-  sjournal <- datum %>% filter(`Source Title` == journal)
+  sjournal <- datum %>% filter(jour == journal)
   # Filtering for target OA designations in a single journal
   fsjournal <- sjournal %>% 
-    filter(grepl(paste(patt, collapse = "|"), `Open Access Designations`))
+    filter(grepl(paste(patt, collapse = "|"), OAdes))
   # Intersection of Volume-Issue combinations that had either target OA designation. 
   sectjournal <- sjournal %>% 
     semi_join(fsjournal, by =c("Volume", "Issue"))
@@ -84,16 +79,6 @@ splitbyjournal <- function(journal) {
     group_split(Volume,Issue) %>% 
     map(~ matchbytibble(.x))
 }
-
-# Initializing empty list
-matchlist <- list()
-# Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
-jnames <- unique(datum$`Source Title`)
-# Apply splitbyjournal and subsequent matchbytibble functions
-sapply(jnames, splitbyjournal)
-
-# Convert list of lists to data.frame
-matched <- as.data.frame(rbindlist(matchlist))
 
 # Clean up =====================
 # 1. rename cols
@@ -106,12 +91,6 @@ matched <- as.data.frame(rbindlist(matchlist))
 datum <- datum %>% dplyr::rename(jour = 'Source Title',
                           citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
-
-matched <- matched %>% dplyr::rename(jour = 'Source Title',
-                          citations = 'Times Cited, All Databases', OAdes = 'Open Access Designations',
-                          year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
-
-
 # 2. clean up journal names
 # Removing excluded journals and special issues; making all journal titles uppercase
 datum <- datum %>%  
@@ -124,26 +103,10 @@ datum <- datum %>%
                          'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
                          'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
                          'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
-                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION'))
+                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION', 'CELL',
+                      'CELL RESEARCH','CELL SYSTEMS','MOLECULAR AND CELLULAR BIOLOGY'))
 # Correcting specific journal name
 datum <- datum %>% 
-  mutate(across(jour,str_replace_all, 
-                pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
-                replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
-#for matched: Removing excluded journals and special issues; making all journal titles uppercase 
-matched <- matched %>%  
-  mutate(jour = toupper(jour)) %>% 
-  filter(is.na(`Special Issue`)) %>% 
-  filter(year %in% c(2013,2014,2015,2016,2017,2018)) %>% 
-  filter(!jour %in% c('ONCOTARGET', 'FUNGAL BIOLOGY REVIEWS', 
-                         'PERSOONIA', 'PLANT BIOTECHNOLOGY JOURNAL',
-                         'GENERAL AND COMPARATIVE ENDOCRINOLOGY',
-                         'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
-                         'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
-                         'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
-                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION'))
-# Correcting specific journal name
-matched <- matched %>% 
   mutate(across(jour,str_replace_all, 
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
@@ -158,7 +121,8 @@ datum$cooksd <- cooks.distance(mod)
 #get upper limit of citation count
 upper_limit_citations=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
           (datum$citations > datum$fitted),]$citations)
-
+lower_limit_citations=min(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+                                  (datum$citations > datum$fitted),]$citations)
 datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,upper_limit_citations)
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 datum$norm_cit_log <- log(datum$norm_cit + 1)
@@ -251,40 +215,10 @@ myCountries[CountryIntersect==FALSE]
 #3e Adding classification of low or high income
 datum$gni_class = ifelse(datum$corrAuth_gni > 12736, 'High', 'Low')
 
-##### for matched: 3a. create new col(s) with univariate outliers corrected #####
-#approach to apply threshold to high citation values - citation count is correlated with year
-mod=lm(matched$citations~matched$year)
-#use model coefficient to make fitted column
-matched$fitted <- mod$coefficients[2]*matched$year + mod$coefficients[1]
-# calculate cooks d for all data
-matched$cooksd <- cooks.distance(mod)
-#get upper limit of citation count
-upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm=T)) & # cooksD is high
-                                  (matched$citations > matched$fitted),]$citations)
-matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
-# Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
-matched$norm_cit_log <- log(matched$norm_cit + 1)
-
-# 3b. create new col from OA designations (ie OA, Closed, Other)
-matched$OAdes = replace_na(matched$OAdes, "")
-matched$OAlab = ifelse(grepl('Gold', matched$OAdes), 
-                     'Other Gold', ifelse(grepl('Bronze', matched$OAdes), 'Bronze',
-                                          ifelse(grepl('Green', matched$OAdes), 'Green',
-                                                 ifelse(grepl('^$', matched$OAdes), 'Closed Access', 'Error'))))
-# 3c. create new col from authors with count
-matched <- matched %>% add_column(auth_count = str_count(matched$Authors, ";") + 1)
-# 3d. create new col from reprint addresses with author country
-matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_loc, -1),"[.]"))
-
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
                           year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
                           Issue, gni_class)
-
-matched <- matched %>% dplyr::select(jour, citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
-                          Issue)
-
 
 # 5a. adding metadata
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
@@ -292,9 +226,23 @@ md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
 md <- md %>% dplyr::select(!(starts_with("X")))
 md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
 
-# 5b. joining metadata with clean data and writing to output file
+# 5b. joining metadata with clean data
 datum <- left_join(datum, md, by = "jour")
-matched <- left_join(matched, md, by = "jour")
+# Removing Cell Bio field, because we removed cell bio journals
+datum <-datum %>% filter(field != "CellBio")
+
+# 5c. Generating a matched dataset
+  #Initializing empty list
+matchlist <- list()
+  # Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
+jnames <- unique(datum$jour)
+# Apply splitbyjournal and subsequent matchbytibble functions
+sapply(jnames, splitbyjournal)
+
+# Convert list of lists to data.frame
+matched <- as.data.frame(rbindlist(matchlist))
+
+# 5d. Write final files
 write_csv(datum, file = "data/OA_data_fin.csv")
 write_csv(matched, file = "data/matched_OA_data_fin.csv")
 
