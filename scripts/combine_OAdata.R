@@ -112,12 +112,6 @@ matched <- matched %>% dplyr::rename(jour = 'Source Title',
                           year = 'Publication Year', corrAuth_loc = 'Reprint Addresses')
 
 
-#names(datum)[names(datum)=='Source Title'] = 'jour'
-#names(datum)[names(datum)=='Times Cited, All Databases'] = 'citations'
-#names(datum)[names(datum)=='Open Access Designations'] = 'OAdes'
-#names(datum)[names(datum)=='Publication Year'] = 'year'
-#names(datum)[names(datum)=='Reprint Addresses'] = 'corrAuth_loc'
-
 # 2. clean up journal names
 # Removing excluded journals and special issues; making all journal titles uppercase
 datum <- datum %>%  
@@ -155,32 +149,17 @@ matched <- matched %>%
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 
 ##### 3a. create new col(s) with univariate outliers corrected##### 
-clean_cols = c('citations') # select cols to correct
-for (col in clean_cols) {
-  var = datum[[col]] # select col
-  quarters = quantile(var,na.rm=TRUE) # determine quartiles
-  IQR = quarters[3]-quarters[2] # .75 quartile - .25 quartile (IQR)
-  var[var>median(var)+(2*IQR)] = median(var)+(2*IQR) # replace values > upp limit
-  var[var<median(var)-(2*IQR)] = median(var)-(2*IQR) # replace values < low limit
-  datum[,paste0("clean_",col)] = var # append col
-  rm(col,IQR,quarters,var)
-}
-#####
-#a slightly different approach to apply threshold to high citation values - citation count is correlated with year
+#approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(datum$citations~datum$year)
-
 #use model coefficient to make fitted column
 datum$fitted <- mod$coefficients[2]*datum$year + mod$coefficients[1]
-
 # calculate cooks d for all data
 datum$cooksd <- cooks.distance(mod)
-
 #get upper limit of citation count
 upper_limit_citations=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
           (datum$citations > datum$fitted),]$citations)
 
 datum$norm_cit=ifelse(datum$citations<upper_limit_citations,datum$citations,upper_limit_citations)
-
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 datum$norm_cit_log <- log(datum$norm_cit + 1)
 
@@ -194,22 +173,13 @@ datum$OAlab = ifelse(grepl('Gold', datum$OAdes),
 datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
 
 # 3d. create new col from reprint addresses with author country
-#datum <- datum %>% add_column(auth_loc = str_remove(word(datum$corrAuth_loc, -1),"[.]"))
-#datum$auth_loc=str_remove(gsub(".*,","",corr_auth_full),"[.]")
 datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
-#datum$auth_loc=ifelse(datum$corr_auth_count>1,NA,
-#                      ifelse(str_detect(datum$corrAuth_loc,"USA"),str_remove(word(datum$corrAuth_loc, -1),"[.]"),str_remove(gsub(".*,","",datum$corrAuth_loc),"[.]")))
-#datum$auth_loc=str_trim(datum$auth_loc, side = "left")
-
 #read in GNI data to match with corresponding author countries
 gni=read.csv(file="data/GNI.Percapita_reduced.csv",header=T,stringsAsFactors = T)
-
 #read in map data
 data("wrld_simpl")
-
 #make two column data frame with country names and 3 letter codes
 countries=data.frame(wrld_simpl@data$NAME,wrld_simpl@data$ISO3)
-
 #test out code to extract multiple countries for one pub (use max value 19 as test)
 #test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
 auth_loc=vector(length = length(datum$corrAuth_loc))
@@ -225,7 +195,6 @@ for (t in 1:length(datum$corrAuth_loc)) {
     test3[i]=ifelse(str_detect(test2[i],"corresponding author"),ifelse(str_detect(test2[i],"USA"),str_remove(word(test2[i], -1),"[.]"),str_remove(gsub(".*,","",test2[i]),"[.]")),NA)
     test3[i]=str_trim(test3[i], side = "left")
     }
-  
   #get unique non-NA values
   test4=unique(sort(na.omit(test3)))
   #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
@@ -233,7 +202,6 @@ for (t in 1:length(datum$corrAuth_loc)) {
   coun_codes=vector(length=length(test4))
   max_gni=vector(length=length(test4))
   for (u in 1:length(test4)) {
-
     #ugly ifelse nest to rename countries
     test4[u]=ifelse(test4[u]=='Republic','Czech Republic',ifelse(test4[u]=='Zealand','New Zealand',
     ifelse(test4[u]=='USA','United States',ifelse(test4[u]=='DEM REP CONGO','Congo',
@@ -272,45 +240,28 @@ for (t in 1:length(datum$corrAuth_loc)) {
 datum$auth_loc=auth_loc
 datum$corrAuth_gni=corrAuth_gni
 datum$corrAuth_code=corrAuth_code
-
 #list all countries
 myCountries=unique(sort(datum$auth_loc))
 #write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
-
 #match with country list for maptools package
 CountryIntersect = myCountries %in% wrld_simpl@data$NAME
-
 #list countries not in list; sanity check! All should already be in the list from nasty ifelse statement within the loop!
 myCountries[CountryIntersect==FALSE]
 
+#3e Adding classification of low or high income
+datum$gni_class = ifelse(datum$corrAuth_gni > 12736, 'High', 'Low')
 
 ##### for matched: 3a. create new col(s) with univariate outliers corrected #####
-clean_cols = c('citations') # select cols to correct
-for (col in clean_cols) {
-  var = matched[[col]] # select col
-  quarters = quantile(var,na.rm=TRUE) # determine quartiles
-  IQR = quarters[3]-quarters[2] # .75 quartile - .25 quartile (IQR)
-  var[var>median(var)+(2*IQR)] = median(var)+(2*IQR) # replace values > upp limit
-  var[var<median(var)-(2*IQR)] = median(var)-(2*IQR) # replace values < low limit
-  matched[,paste0("clean_",col)] = var # append col
-  rm(col,IQR,quarters,var)
-}
-#####
-#a slightly different approach to apply threshold to high citation values - citation count is correlated with year
+#approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(matched$citations~matched$year)
-
 #use model coefficient to make fitted column
 matched$fitted <- mod$coefficients[2]*matched$year + mod$coefficients[1]
-
 # calculate cooks d for all data
 matched$cooksd <- cooks.distance(mod)
-
 #get upper limit of citation count
 upper_limit_citations=min(matched[(matched$cooksd >=3*mean(matched$cooksd, na.rm=T)) & # cooksD is high
                                   (matched$citations > matched$fitted),]$citations)
-
 matched$norm_cit=ifelse(matched$citations<upper_limit_citations,matched$citations,upper_limit_citations)
-
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 matched$norm_cit_log <- log(matched$norm_cit + 1)
 
@@ -327,12 +278,13 @@ matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_lo
 
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,Issue)
+                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
+                          Issue, gni_class)
 
 matched <- matched %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,Issue)
-#keep_cols = c('journal','OAdes','citations', 'year', 'Authors', 'corrAuth_loc', 'Publisher')
-#datum = datum[keep_cols]
+                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
+                          Issue, gni_class)
+
 
 # 5a. adding metadata
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
