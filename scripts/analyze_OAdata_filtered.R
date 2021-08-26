@@ -37,6 +37,8 @@ library(lmerTest)
 library(car)
 #install.packages("numDeriv")
 library(numDeriv)
+#install.packages("performance")
+library(performance) 
 
 # Below code used to generate dataframe excluding all records with fewer than 5 citations
   # datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
