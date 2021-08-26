@@ -109,8 +109,6 @@ hist(datum$AIS)
 hist(datum$auth_count, breaks = 100)
 
 
-
-
 # Statistical Tests ================
 
 # Recode categorical fields (deviation- compares level to grand mean)
