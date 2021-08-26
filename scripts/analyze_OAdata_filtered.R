@@ -35,6 +35,8 @@ library(lme4)
 library(lmerTest)
 #install.packages('car')
 library(car)
+#install.packages("numDeriv")
+library(numDeriv)
 
 # Below code used to generate dataframe excluding all records with fewer than 5 citations
   # datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
@@ -43,6 +45,8 @@ library(car)
 
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+# Removing Cell Bio to see if this will alleviate "missing levels" warning
+datum <-datum %>% filter(field != "CellBio") 
 
 # check data
 names(datum)
@@ -52,24 +56,25 @@ summary(datum)
 
 # Data Exploration  ================
 ls.str(datum)
-#need to id variables I want as a factor
+
+# Change variables to factors
+ ## need to id variables I want as a factor
 datum$jour <- as.factor(datum$jour)
 datum$OAlab <- as.factor(datum$OAlab)
 datum$field <- as.factor(datum$field)
 datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
 datum$pub <- as.factor(datum$pub)
-#datum$year <- as.factor(datum$year)
 
-# write.csv(x=datum_filtered, file="data/OA_data_fiveormore_records.csv", row.names=FALSE, quote=FALSE)
-datum_filtered <- datum %>% filter(citations > 4)
+# Now, filter out records with fewer than 5 citations
+  ## Commented out removal of Cell Bio here because it was removed from "datum" object after loading
+datum_filtered <- datum %>% filter(citations > 4) # %>% filter(field != "CellBio") 
 names(datum_filtered)
 head(datum_filtered)
 summary(datum_filtered)
 ls.str(datum_filtered)
 
-# Re-do steps to create norm_cit and norm_cit_log variables from `combine_OAdata.R`
-# for filtered dataframe
+# Re-do steps to create norm_cit and norm_cit_log variables from `combine_OAdata.R` for filtered dataframe
 
 #a slightly different approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(datum_filtered$citations~datum_filtered$year)
@@ -95,16 +100,7 @@ datum_filtered$norm_cit_log <- log(datum_filtered$norm_cit + 1)
 datum$year <- as.factor(datum$year)
 datum_filtered$year <- as.factor(datum_filtered$year)
 
-# Data Exploration  ================
-ls.str(datum_filtered)
-#need to id variables I want as a factor
-datum_filtered$jour <- as.factor(datum_filtered$jour)
-datum_filtered$OAlab <- as.factor(datum_filtered$OAlab)
-datum_filtered$field <- as.factor(datum_filtered$field)
-datum_filtered$jour_loc <- as.factor(datum_filtered$jour_loc)
-datum_filtered$JCR_quart <- as.factor(datum_filtered$JCR_quart)
-datum_filtered$pub <- as.factor(datum_filtered$pub)
-datum_filtered$year <- as.factor(datum_filtered$year)
+# Data Exploration  ===============
 
 
 # Plot histogram; estimate mean & variance for response variables
@@ -115,9 +111,6 @@ mean(datum_filtered$clean_citations)
 mean(datum$clean_citations)
 var(datum_filtered$clean_citations)
 var(datum$clean_citations)
-
-
-
 
 
 hist(datum_filtered$norm_cit) # for alternative normalization metric
@@ -143,30 +136,31 @@ hist(datum$auth_count, breaks=100)
 # Statistical Tests ================
 
 # Recode categorical fields (deviation- compares level to grand mean)
-contrasts(datum_filtered$field) = contr.sum(12)
+contrasts(datum_filtered$field) = contr.sum(11) # Was 12 before removing Cell Bio
 contrasts(datum_filtered$year) = contr.sum(6)
 
 # general linear model using norm_cite as the response
-mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
+## As of 8/5/2021, both this script and `analyze_OAdata.R` excluded the variable "pub" from mod1. TM corrected that
+mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+pub+(1|field:jour), 
              data = datum_filtered)
 summary(mod1)
 anova(mod1)
 
 # general linear model using ln-transformed norm_cite as the response
-mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+pub+(1|field:jour), 
+mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+pub+(1|field:jour), 
                  data = datum_filtered)
 summary(mod1.log)
 anova(mod1.log)
 
 
 # general linear model using norm_cite as the response. Including interactions for access by field and author count by APC
-mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count+JCR_quart+AIS+year+(1|field:jour), 
                data = datum_filtered)
 summary(mod1.2)
 Anova(mod1.2, type = 3)
 
 # general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
-mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
+mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count+JCR_quart+AIS+year+(1|field:jour), 
                    data = datum_filtered)
 summary(mod1.2.log)
 Anova(mod1.2.log, type = 3)
@@ -175,37 +169,85 @@ Anova(mod1.2.log, type = 3)
 # Comparing norm_cit_log models with and without interactions
 anova(mod1.log,mod1.2.log)
 
-########## Failed to converge
+
 # Poisson regression using norm_cit as response
 # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
+#Warning messages:
+#1: contrasts dropped from factor field due to missing levels 
+#2: contrasts dropped from factor field due to missing levels 
+#3: contrasts dropped from factor field due to missing levels 
+#4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#Model failed to converge with max|grad| = 0.0251909 (tol = 0.002, component 1)
+#5: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#Model is nearly unidentifiable: very large eigenvalue
+#- Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#- Rescale variables?
 summary(mod2.1)
 Anova(mod2.1)
 
-# basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+scale(auth_count)+JCR_quart+scale(AIS)+scale(APC)+year+(1|field:jour), 
+## Scale continuous predictor variables
+datum_filtered$auth_count_scaled <- scale(datum_filtered$auth_count)
+datum_filtered$AIS_scaled <- scale(datum_filtered$AIS)
+
+# basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+field+JCR_quart+AIS_scaled+year+(1|field:jour), 
                 data = datum_filtered, family = poisson(link = "log"))
+#4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                  Model is nearly unidentifiable: very large eigenvalue
+#                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#                - Rescale variables?
 summary(mod2.2)
 Anova(mod2.2)
 
-# basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
-mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
-                 data = datum_filtered, family = poisson(link = "log"))
-summary(mod2.3)
+## Now, compare betas between mod2.1 (unscaled) and mod2.2 (scaled)
+## Get means and standard deviations for the unscaled continuous predictor variables
+unscaled_AIS_mean <- mean(datum_filtered$AIS)
+unscaled_AIS_sd <- sd(datum_filtered$AIS)
+unscaled_authcount_mean <- mean(datum_filtered$auth_count)
+unscaled_authcount_sd <- sd(datum_filtered$auth_count)
 
-# basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
-                data = datum_filtered, family = poisson(link = "log"))
+## This is the back-transformation that Todd Steury recommended
+  # Fixed effect for auth_count_scaled in mod2.2 is 0.042992
+  0.042992*unscaled_authcount_mean #= 0.2982747; in mod2.1 the beta is 0.007123
+  # Fixed effect for AIS_scaled is 0.292701 
+  0.292701*unscaled_AIS_mean #=0.4667202; in mod2.1 this beta is 0.218133
 
-summary(mod2.4)
-# basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-# increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
-mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
-                data = datum_filtered, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
-summary(mod2.5)
+### Model Diagnostics ####
 
-# model with only terms that we are interested in interactions between, with random effect of journal nested in field
-mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)*scale(APC)+(1|field:jour), 
-                data = datum_filtered, family = poisson(link = "log"))
-summary(mod2.6)
+# Check for model's singularity  
+Theta <- getME(mod2.2, "theta")
+Low <- getME(mod2.2, "lower")
+min(Theta[Low==0])
+#[1] 0.1667936 -- Not singular
+
+# Check gradient calculations
+derivs1 <- mod2.2@optinfo$derivs
+sc_grad1 <- with(derivs1, solve(Hessian, gradient))
+max(abs(sc_grad1))
+#[1] 0.0001571038
+max(pmin(abs(sc_grad1),abs(derivs1$gradient)))
+#[1] 0.0001571038
+
+dd <- update(mod2.2,devFunOnly=TRUE)
+pars <- unlist(getME(mod2.2,c("theta","fixef")))
+grad2 <- grad(dd,pars)
+hess2 <- hessian(dd,pars)
+sc_grad2 <- solve(hess2,grad2)
+max(pmin(abs(sc_grad2),abs(grad2)))
+#[1] 0.0006343064
+
+# Restart
+ss <- getME(mod2.2, c("theta", "fixef"))
+mod2.3 <- update(mod2.2, start=ss, control=glmerControl(optCtrl = list(maxfun=2e4)))
+#Warning message:
+#In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#Model is nearly unidentifiable: very large eigenvalue
+#- Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#- Rescale variables?
+
+mod2.4 <- update(mod2.2, start=ss, control=glmerControl(optimizer = "bobyqa",
+                                                        optCtrl = list(maxfun=2e5)))
+mod2.5 <- update(mod2.2, start=ss, control=glmerControl(optimizer = "nloptwrap",
+                                                        optCtrl = list(maxfun=2e5)))
