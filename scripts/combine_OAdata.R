@@ -277,13 +277,13 @@ matched <- matched %>% add_column(auth_count = str_count(matched$Authors, ";") +
 matched <- matched %>% add_column(auth_loc = str_remove(word(matched$corrAuth_loc, -1),"[.]"))
 
 # 4. select desired cols
-datum <- datum %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
+datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
                           year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
                           Issue, gni_class)
 
-matched <- matched %>% dplyr::select(jour, citations, clean_citations, OAdes, OAlab, 
+matched <- matched %>% dplyr::select(jour, citations, OAdes, OAlab, 
                           year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
-                          Issue, gni_class)
+                          Issue)
 
 
 # 5a. adding metadata
