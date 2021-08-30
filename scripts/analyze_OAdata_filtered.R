@@ -174,7 +174,7 @@ anova(mod1.log,mod1.2.log)
 
 # Poisson regression using norm_cit as response
 # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field:jour), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+year+(1|field/jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 #Warning messages:
 #1: contrasts dropped from factor field due to missing levels 
@@ -194,7 +194,7 @@ datum_filtered$auth_count_scaled <- scale(datum_filtered$auth_count)
 datum_filtered$AIS_scaled <- scale(datum_filtered$AIS)
 
 # basic model of all factors (continuous factors scaled), with a random effect of journal nested in field
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+field+JCR_quart+AIS_scaled+year+(1|field:jour), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+field+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum_filtered, family = poisson(link = "log"))
 #4: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
 #                  Model is nearly unidentifiable: very large eigenvalue

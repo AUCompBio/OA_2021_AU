@@ -139,38 +139,45 @@ datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013
                ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
 
 #repeat to apply a lower limit
-cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2013) & #year is 2013
-                        (datum$citations < datum$fitted),]$citations)
-cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2014) & #year is 2014
-                    (datum$citations < datum$fitted),]$citations)
-cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2015) & #year is 2015
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2016) & #year is 2016
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2017) & #year is 2017
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2018) & #year is 2018
-  (datum$citations < datum$fitted),]$citations)
+#cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2013) & #year is 2013
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2014) & #year is 2014
+#                    (datum$citations < datum$fitted),]$citations)
+#cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2015) & #year is 2015
+#  (datum$citations < datum$fitted),]$citations)
+#cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2016) & #year is 2016
+#  (datum$citations < datum$fitted),]$citations)
+#cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2017) & #year is 2017
+#  (datum$citations < datum$fitted),]$citations)
+#cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2018) & #year is 2018
+#  (datum$citations < datum$fitted),]$citations)
 
-datum$norm_cit=ifelse(datum$year==2013 & datum$citations<cutoff_2013,cutoff_2013,
-               ifelse(datum$year==2014 & datum$citations<cutoff_2014,cutoff_2014,
-               ifelse(datum$year==2015 & datum$citations<cutoff_2015,cutoff_2015,
-               ifelse(datum$year==2016 & datum$citations<cutoff_2016,cutoff_2016,
-               ifelse(datum$year==2017 & datum$citations<cutoff_2017,cutoff_2017,
-               ifelse(datum$year==2018 & datum$citations<cutoff_2018,cutoff_2018,datum$norm_cit))))))
+#datum$norm_cit=ifelse(datum$year==2013 & datum$citations<cutoff_2013,cutoff_2013,
+#               ifelse(datum$year==2014 & datum$citations<cutoff_2014,cutoff_2014,
+#               ifelse(datum$year==2015 & datum$citations<cutoff_2015,cutoff_2015,
+#               ifelse(datum$year==2016 & datum$citations<cutoff_2016,cutoff_2016,
+#               ifelse(datum$year==2017 & datum$citations<cutoff_2017,cutoff_2017,
+#               ifelse(datum$year==2018 & datum$citations<cutoff_2018,cutoff_2018,datum$norm_cit))))))
 
-datum <- datum %>% filter(!(datum$year == 2013 & datum$citations < cutoff_2013),
-                          (datum$year == 2014 & datum$citations < cutoff_2014),
-                          (datum$year == 2015 & datum$citations < cutoff_2015),
-                          (datum$year == 2016 & datum$citations < cutoff_2016),
-                          (datum$year == 2017 & datum$citations < cutoff_2017),
-                          (datum$year == 2018 & datum$citations < cutoff_2018))
+#datum <- datum %>% filter(!(datum$year == 2013 & datum$citations < cutoff_2013)|
+#                          (datum$year == 2014 & datum$citations < cutoff_2014)|
+#                          (datum$year == 2015 & datum$citations < cutoff_2015)|
+#                          (datum$year == 2016 & datum$citations < cutoff_2016)|
+#                          (datum$year == 2017 & datum$citations < cutoff_2017)|
+#                          (datum$year == 2018 & datum$citations < cutoff_2018))
+
+# TM & AC, cut-off values are way too conservative and we are losing valuable data at the
+#   lower end of the threshold. We can consult with Todd S. for a less arbitrary 
+#   but less conservative way to filter, but for now we will use original cut-off of 5
+
+datum <- datum %>% filter(citations > 4)
+
 
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 datum$norm_cit_log <- log(datum$norm_cit + 1)
