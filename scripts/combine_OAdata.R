@@ -268,7 +268,7 @@ CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 myCountries[CountryIntersect==FALSE]
 
 #3e Adding classification of low or high income
-datum$gni_class = ifelse(datum$corrAuth_gni > 12736, 'High', 'Low')
+datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
 
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
