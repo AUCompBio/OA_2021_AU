@@ -165,6 +165,13 @@ datum$norm_cit=ifelse(datum$year==2013 & datum$citations<cutoff_2013,cutoff_2013
                ifelse(datum$year==2017 & datum$citations<cutoff_2017,cutoff_2017,
                ifelse(datum$year==2018 & datum$citations<cutoff_2018,cutoff_2018,datum$norm_cit))))))
 
+datum <- datum %>% filter(!(datum$year == 2013 & datum$citations < cutoff_2013),
+                          (datum$year == 2014 & datum$citations < cutoff_2014),
+                          (datum$year == 2015 & datum$citations < cutoff_2015),
+                          (datum$year == 2016 & datum$citations < cutoff_2016),
+                          (datum$year == 2017 & datum$citations < cutoff_2017),
+                          (datum$year == 2018 & datum$citations < cutoff_2018))
+
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 datum$norm_cit_log <- log(datum$norm_cit + 1)
 
