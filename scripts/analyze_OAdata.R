@@ -95,9 +95,9 @@ datum$year <- as.factor(datum$year)
 
 
 # Plot histogram; estimate mean & variance for response variables
-hist(datum$clean_citations)
-mean(datum$clean_citations)
-var(datum$clean_citations)
+hist(datum$citations)#hist(datum$clean_citations)
+mean(datum$citations) #mean(datum$clean_citations)
+var(datum$citations) #var(datum$clean_citations)
 
 hist(datum$norm_cit) # for alternative normalization metric
 # clean citations is not normally distributed; likely should not use 
@@ -106,6 +106,8 @@ mean(datum$norm_cit)
 var(datum$norm_cit) # for alternative normalization metric
 # the variance is higher than the mean, indicating an expectation of 
 #   over-dispersion in the model.
+
+datum$norm_cit_log <- log(datum$norm_cit + 1) 
 
 hist(datum$norm_cit_log)
 mean(datum$norm_cit_log)
@@ -126,7 +128,7 @@ datum <- datum %>%
 # Statistical Tests ================
 
 # Recode categorical fields (deviation- compares level to grand mean)
-contrasts(datum$field) = contr.sum(11)
+contrasts(datum$field) = contr.sum(12) 
 contrasts(datum$year) = contr.sum(6)
 
 ##### Models that didn't converge :( #####
@@ -156,7 +158,7 @@ Anova(mod2.1)
   #                                  - Rescale variables?
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
 
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))

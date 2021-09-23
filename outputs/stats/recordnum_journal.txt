@@ -1,200 +1,200 @@
                                  BIOCHEMICAL AND BIOPHYSICAL RESEARCH COMMUNICATIONS 
-                                                                               11286 
+                                                                                5389 
                                                ANTIMICROBIAL AGENTS AND CHEMOTHERAPY 
-                                                                                5614 
-                                                                    ONCOLOGY REPORTS 
-                                                                                4514 
+                                                                                3995 
                                               APPLIED AND ENVIRONMENTAL MICROBIOLOGY 
-                                                                                4438 
-                                                     INTERNATIONAL JOURNAL OF CANCER 
-                                                                                3322 
-                              PROCEEDINGS OF THE ROYAL SOCIETY B-BIOLOGICAL SCIENCES 
-                                                                                3268 
-                                                      JOURNAL OF INFECTIOUS DISEASES 
-                                                                                3144 
+                                                                                3332 
                                                                             ONCOGENE 
-                                                                                3121 
-                                                    JOURNAL OF CLINICAL MICROBIOLOGY 
-                                                                                3114 
-                                                           BRITISH JOURNAL OF CANCER 
-                                                                                2875 
+                                                                                2782 
+                                                                    ONCOLOGY REPORTS 
+                                                                                2765 
+                                                     INTERNATIONAL JOURNAL OF CANCER 
+                                                                                2619 
                                                                     PLANT PHYSIOLOGY 
-                                                                                2858 
+                                                                                2611 
+                              PROCEEDINGS OF THE ROYAL SOCIETY B-BIOLOGICAL SCIENCES 
+                                                                                2493 
                                                         CLINICAL INFECTIOUS DISEASES 
-                                                                                2856 
-                                                                         AQUACULTURE 
-                                                                                2789 
+                                                                                2343 
+                                                           BRITISH JOURNAL OF CANCER 
+                                                                                2335 
+                                                      JOURNAL OF INFECTIOUS DISEASES 
+                                                                                2324 
                                                             HUMAN MOLECULAR GENETICS 
-                                                                                2758 
-                                                                  ANNALS OF ONCOLOGY 
-                                                                                2320 
+                                                                                2323 
                                                                                 CELL 
-                                                                                2305 
+                                                                                2300 
+                                                    JOURNAL OF CLINICAL MICROBIOLOGY 
+                                                                                2159 
                                                                      CEREBRAL CORTEX 
-                                                                                2094 
+                                                                                1678 
+                                                                  ANNALS OF ONCOLOGY 
+                                                                                1671 
+                                                                         AQUACULTURE 
+                                                                                1648 
                                                                    MOLECULAR ECOLOGY 
-                                                                                2010 
-                                                                  PSYCHOPHARMACOLOGY 
-                                                                                1912 
+                                                                                1624 
                                                       JOURNAL OF EXPERIMENTAL BOTANY 
-                                                                                1898 
+                                                                                1622 
                                                                        PLANT JOURNAL 
-                                                                                1838 
-                                                                    ANIMAL BEHAVIOUR 
-                                                                                1759 
-                                                              MOLECULAR MICROBIOLOGY 
-                                                                                1657 
-                                                     MOLECULAR BIOLOGY AND EVOLUTION 
-                                                                                1582 
-                                                      MOLECULAR AND CELLULAR BIOLOGY 
-                                                                                1556 
-                                                                           EVOLUTION 
-                                                                                1515 
-                                                        JOURNAL OF INSECT PHYSIOLOGY 
-                                                                                1456 
-                                                        JOURNAL OF APPLIED PHYCOLOGY 
-                                                                                1428 
+                                                                                1561 
                                                                                BRAIN 
-                                                                                1390 
-                                                             JOURNAL OF FISH BIOLOGY 
-                                                                                1381 
-                                                                     BIOLOGY LETTERS 
-                                                                                1334 
+                                                                                1320 
                                                                           PLANT CELL 
-                                                                                1324 
-                                                                      MARINE BIOLOGY 
-                                                                                1290 
-                                            DEVELOPMENTAL AND COMPARATIVE IMMUNOLOGY 
-                                                                                1248 
-                                                     JOURNAL OF EVOLUTIONARY BIOLOGY 
-                                                                                1236 
-                                  JOURNAL OF EXPERIMENTAL MARINE BIOLOGY AND ECOLOGY 
-                                                                                1167 
-                                           BIOLOGICAL JOURNAL OF THE LINNEAN SOCIETY 
-                                                                                1156 
-                                                                   MOLECULAR THERAPY 
-                                                                                1111 
-                                                 BEHAVIORAL ECOLOGY AND SOCIOBIOLOGY 
-                                                                                1100 
-                                                            ENVIRONMENTAL ENTOMOLOGY 
-                                                                                1059 
-                                                                     GENOME RESEARCH 
-                                                                                1057 
-                                                                 GENES & DEVELOPMENT 
-                                                                                1045 
-                                                    JOURNAL OF COMPARATIVE NEUROLOGY 
-                                                                                1040 
-                                                                  BEHAVIORAL ECOLOGY 
+                                                                                1277 
+                                                     MOLECULAR BIOLOGY AND EVOLUTION 
+                                                                                1272 
+                                                                  PSYCHOPHARMACOLOGY 
+                                                                                1186 
+                                                              MOLECULAR MICROBIOLOGY 
+                                                                                1182 
+                                                      MOLECULAR AND CELLULAR BIOLOGY 
+                                                                                1173 
+                                                                           EVOLUTION 
+                                                                                1075 
+                                                                    ANIMAL BEHAVIOUR 
                                                                                 1027 
-                                                                 AMERICAN NATURALIST 
-                                                                                 992 
-                                                               BEHAVIOURAL PROCESSES 
-                                                                                 920 
-        COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY A-MOLECULAR & INTEGRATIVE PHYSIOLOGY 
-                                                                                 898 
-                                                                   CLINICAL GENETICS 
-                                                                                 851 
-                                                                JOURNAL OF MAMMALOGY 
-                                                                                 820 
-                                                      JOURNAL OF WILDLIFE MANAGEMENT 
-                                                                                 816 
-                                                           JOURNAL OF ANIMAL ECOLOGY 
-                                                                                 808 
-                                              REPRODUCTION FERTILITY AND DEVELOPMENT 
-                                                                                 789 
-                                                             PLANT MOLECULAR BIOLOGY 
-                                                                                 781 
-                                                   JOURNAL OF INVERTEBRATE PATHOLOGY 
-                                                                                 761 
-                                                          JOURNAL OF NATURAL HISTORY 
-                                                                                 757 
-                                                          JOURNAL OF THERMAL BIOLOGY 
+                                                                 GENES & DEVELOPMENT 
+                                                                                 976 
+                                                                   MOLECULAR THERAPY 
+                                                                                 973 
+                                                                     GENOME RESEARCH 
+                                                                                 969 
+                                                                     BIOLOGY LETTERS 
+                                                                                 839 
+                                                        JOURNAL OF INSECT PHYSIOLOGY 
+                                                                                 762 
+                                            DEVELOPMENTAL AND COMPARATIVE IMMUNOLOGY 
+                                                                                 759 
+                                                        JOURNAL OF APPLIED PHYCOLOGY 
                                                                                  749 
-                                                         MOLECULAR ECOLOGY RESOURCES 
-                                                                                 718 
-                                                                           MYCOTAXON 
-                                                                                 697 
-                                                  EXPERIMENTAL AND APPLIED ACAROLOGY 
-                                                                                 687 
+                                                                 AMERICAN NATURALIST 
+                                                                                 676 
+                                                     JOURNAL OF EVOLUTIONARY BIOLOGY 
+                                                                                 675 
                                                                  CELL HOST & MICROBE 
-                                                                                 683 
-                                                                       PLANT BIOLOGY 
-                                                                                 683 
-                                                                         CORAL REEFS 
-                                                                                 653 
-                                           INSECT BIOCHEMISTRY AND MOLECULAR BIOLOGY 
-                                                                                 645 
-                                                       JOURNAL OF PSYCHOPHARMACOLOGY 
-                                                                                 637 
-                                                         CANADIAN JOURNAL OF ZOOLOGY 
+                                                                                 671 
+                                                           JOURNAL OF ANIMAL ECOLOGY 
                                                                                  635 
-                                                                    ANIMAL COGNITION 
-                                                                                 614 
-                                                                    MEDICAL MYCOLOGY 
-                                                                                 614 
-                                                                            ETHOLOGY 
-                                                                                 613 
-                                                                            HEREDITY 
-                                                                                 608 
-                                                                             MYCOSES 
-                                                                                 572 
-                                                                           MYCOLOGIA 
-                                                                                 570 
-                                                                  JOURNAL OF ZOOLOGY 
-                                                                                 567 
-                                               EUROPEAN JOURNAL OF WILDLIFE RESEARCH 
-                                                                                 562 
+                                                                  BEHAVIORAL ECOLOGY 
+                                                                                 604 
+                                                                      MARINE BIOLOGY 
+                                                                                 601 
+                                                    JOURNAL OF COMPARATIVE NEUROLOGY 
+                                                                                 600 
+                                  JOURNAL OF EXPERIMENTAL MARINE BIOLOGY AND ECOLOGY 
+                                                                                 559 
+                                                         MOLECULAR ECOLOGY RESOURCES 
+                                                                                 559 
+                                                             PLANT MOLECULAR BIOLOGY 
+                                                                                 536 
+                                                 BEHAVIORAL ECOLOGY AND SOCIOBIOLOGY 
+                                                                                 509 
                                                                      MOLECULAR PLANT 
-                                                                                 546 
-                                                         FUNGAL GENETICS AND BIOLOGY 
-                                                                                 534 
-                                           ZOOLOGICAL JOURNAL OF THE LINNEAN SOCIETY 
-                                                                                 534 
-                                                      JOURNAL OF INSECT CONSERVATION 
-                                                                                 530 
-                                                                MYCOLOGICAL PROGRESS 
-                                                                                 529 
-          COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY B-BIOCHEMISTRY & MOLECULAR BIOLOGY 
-                                                                                 519 
-                                                               ECOLOGICAL ENTOMOLOGY 
-                                                                                 519 
-                                                                      FUNGAL BIOLOGY 
-                                                                                 519 
-                                                                          NEMATOLOGY 
-                                                                                 513 
-                                                                      MYCOPATHOLOGIA 
-                                                                                 512 
-                                      ANNALS OF THE ENTOMOLOGICAL SOCIETY OF AMERICA 
-                                                                                 510 
-                                                     AMERICAN JOURNAL OF PRIMATOLOGY 
-                                                                                 508 
-                                                            JOURNAL OF HELMINTHOLOGY 
-                                                                                 504 
-                 COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY C-TOXICOLOGY & PHARMACOLOGY 
-                                                                                 500 
-                                                               MARINE MAMMAL SCIENCE 
-                                                                                 499 
-                                                                 FEMS YEAST RESEARCH 
-                                                                                 490 
-                                                       JOURNAL OF CRUSTACEAN BIOLOGY 
-                                                                                 484 
-                                                                      FUNGAL ECOLOGY 
-                                                                                 461 
-                                                                 JOURNAL OF HEREDITY 
-                                                                                 444 
-                                                                   MAMMALIAN BIOLOGY 
-                                                                                 440 
-                                                                   LEARNING & MEMORY 
-                                                                                 432 
-JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY 
-                                                                                 421 
-                                                              MICROBES AND INFECTION 
-                                                                                 415 
-                                                                       CELL RESEARCH 
-                                                                                 404 
-                                                                   WILDLIFE RESEARCH 
+                                                                                 505 
+                                           BIOLOGICAL JOURNAL OF THE LINNEAN SOCIETY 
+                                                                                 495 
+                                                                   CLINICAL GENETICS 
+                                                                                 478 
+                                           INSECT BIOCHEMISTRY AND MOLECULAR BIOLOGY 
+                                                                                 473 
+        COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY A-MOLECULAR & INTEGRATIVE PHYSIOLOGY 
+                                                                                 419 
+                                                                            HEREDITY 
                                                                                  396 
+                                                                         CORAL REEFS 
+                                                                                 388 
+                                                             JOURNAL OF FISH BIOLOGY 
+                                                                                 384 
+                                                                       CELL RESEARCH 
+                                                                                 382 
+                                                   JOURNAL OF INVERTEBRATE PATHOLOGY 
+                                                                                 364 
+                                                      JOURNAL OF WILDLIFE MANAGEMENT 
+                                                                                 358 
+                                                                    ANIMAL COGNITION 
+                                                                                 334 
+                                                         FUNGAL GENETICS AND BIOLOGY 
+                                                                                 324 
+                                                                       PLANT BIOLOGY 
+                                                                                 324 
+                                                            ENVIRONMENTAL ENTOMOLOGY 
+                                                                                 320 
+                                                                JOURNAL OF MAMMALOGY 
+                                                                                 319 
+                                                       JOURNAL OF PSYCHOPHARMACOLOGY 
+                                                                                 319 
+                                                                    MEDICAL MYCOLOGY 
+                                                                                 307 
+                                                          JOURNAL OF THERMAL BIOLOGY 
+                                                                                 300 
+                                                                           MYCOLOGIA 
+                                                                                 299 
+                                           ZOOLOGICAL JOURNAL OF THE LINNEAN SOCIETY 
+                                                                                 293 
+                                                                             MYCOSES 
+                                                                                 282 
+                                                                      FUNGAL ECOLOGY 
+                                                                                 279 
+                 COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY C-TOXICOLOGY & PHARMACOLOGY 
+                                                                                 277 
+                                                                      FUNGAL BIOLOGY 
+                                                                                 275 
+                                                               BEHAVIOURAL PROCESSES 
+                                                                                 272 
+                                                  EXPERIMENTAL AND APPLIED ACAROLOGY 
+                                                                                 262 
+                                                                        CELL SYSTEMS 
+                                                                                 254 
+                                                                          MYCORRHIZA 
+                                                                                 246 
+                                              REPRODUCTION FERTILITY AND DEVELOPMENT 
+                                                                                 240 
+                                                     AMERICAN JOURNAL OF PRIMATOLOGY 
+                                                                                 232 
+                                                 INTEGRATIVE AND COMPARATIVE BIOLOGY 
+                                                                                 232 
+                                                                   LEARNING & MEMORY 
+                                                                                 225 
+                                                                  JOURNAL OF ZOOLOGY 
+                                                                                 219 
+                                                               MARINE MAMMAL SCIENCE 
+                                                                                 218 
+          COMPARATIVE BIOCHEMISTRY AND PHYSIOLOGY B-BIOCHEMISTRY & MOLECULAR BIOLOGY 
+                                                                                 213 
+                                                                MYCOLOGICAL PROGRESS 
+                                                                                 213 
+                                                                 FEMS YEAST RESEARCH 
+                                                                                 212 
+                                                      JOURNAL OF INSECT CONSERVATION 
+                                                                                 204 
+                                                                 JOURNAL OF HEREDITY 
+                                                                                 203 
+                                                              MICROBES AND INFECTION 
+                                                                                 188 
+                                                                            ETHOLOGY 
+                                                                                 185 
+                                               EUROPEAN JOURNAL OF WILDLIFE RESEARCH 
+                                                                                 185 
+JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY 
+                                                                                 184 
+                                                               ECOLOGICAL ENTOMOLOGY 
+                                                                                 176 
+                                               PHYSIOLOGICAL AND BIOCHEMICAL ZOOLOGY 
+                                                                                 174 
+                                                                   ZOOLOGICA SCRIPTA 
+                                                                                 167 
+                                                                      MYCOPATHOLOGIA 
+                                                                                 163 
                                                                            ZEBRAFISH 
-                                                                                 389 
+                                                                                 158 
+                                                                   MAMMALIAN BIOLOGY 
+                                                                                 151 
+                                                                    FUNGAL DIVERSITY 
+                                                                                 146 
+                                      ANNALS OF THE ENTOMOLOGICAL SOCIETY OF AMERICA 
+                                                                                 141 
+                                                         CANADIAN JOURNAL OF ZOOLOGY 
+                                                                                 140 
                                                                              (Other) 
-                                                                               12911 
+                                                                                3762 
