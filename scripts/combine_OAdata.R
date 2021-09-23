@@ -196,11 +196,11 @@ cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD 
 #   but less conservative way to filter, but for now we will use original cut-off of 5
 
 # exclude rows with less than 10 citations
-#datumkept10 <- datum %>% filter(citations > 9)
+datum <- datum %>% filter(citations > 9)
   # this excludes 55,952 records
 #datumkept5 <- datum %>%  filter(citations > 4)
   # this excludes 25,701 records 
-datum <- datum %>% filter(citations > 4)
+#datum <- datum %>% filter(citations > 4)
 
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 #datum$norm_cit_log <- log(datum$norm_cit + 1)
