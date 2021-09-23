@@ -43,7 +43,7 @@ datum$`Open Access Designations`= replace_na(datum$`Open Access Designations`, "
 # Functions and subsequent code to produce OA/CA matched issues dataframe
 
 ## Function that takes grouped data.frames and checks for the presence of both target OA designation patterns in each group
-matchbytibble <- function(tibs) {
+OAmatchbytibble <- function(tibs) {
   # OA designation patterns needed to match; using grep so regex should work 
   patt <- c("^$", "Other Gold")
   # Check for Other Gold in the designation field
@@ -54,13 +54,31 @@ matchbytibble <- function(tibs) {
   # If ckgold & ckblank evaluate at TRUE...else...
   if (ckgold == TRUE && ckblank == TRUE) {
     # add tib in list form to matched list of data.tables
-    matchlist <<- append(matchlist, list(tibs)) 
+    OCmatchlist <<- append(OCmatchlist, list(tibs)) 
     print("Both subscription (blank) and Other Gold designations are found in this issue. Writing to matched dataframe...")
   } else {
     print("Subscription (blank) and/or Other Gold designations were not found in this issue. Omitting this issue from the matched dataframe.")
   }
 }
-
+## Function that takes grouped data.frames and checks for the presence of both target OA designation patterns in each group
+    #here matching closed and green access articles
+GAmatchbytibble <- function(tibs) {
+  # OA designation patterns needed to match; using grep so regex should work 
+  patt <- c("^$", "Green")
+  # Check for Other Gold in the designation field
+  ckgreen <- any(grepl(patt[[2]],tibs$OAdes))
+  # Check for blanks in the designation field
+  ckblank <- any(grepl(patt[[1]],tibs$OAdes))
+  
+  # If ckgold & ckblank evaluate at TRUE...else...
+  if (ckgreen == TRUE && ckblank == TRUE) {
+    # add tib in list form to matched list of data.tables
+    GCmatchlist <<- append(GCmatchlist, list(tibs)) 
+    print("Both subscription (blank) and Green designations are found in this issue. Writing to matched dataframe...")
+  } else {
+    print("Subscription (blank) and/or Green designations were not found in this issue. Omitting this issue from the matched dataframe.")
+  }
+}
 
 ## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
 splitbyjournal <- function(journal) {
@@ -77,7 +95,7 @@ splitbyjournal <- function(journal) {
   # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
   sectjournal %>% 
     group_split(Volume,Issue) %>% 
-    map(~ matchbytibble(.x))
+    map(~ OAmatchbytibble(.x))
 }
 
 # Clean up =====================
@@ -103,8 +121,8 @@ datum <- datum %>%
                          'AVIAN BIOLOGY RESEARCH', 'DEVELOPMENTAL BIOLOGY',
                          'PAKISTAN JOURNAL OF ZOOLOGY','GAYANA',
                          'ANIMAL CELLS AND SYSTEMS','ITALIAN JOURNAL OF ZOOLOGY',
-                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION', 'CELL',
-                      'CELL RESEARCH','CELL SYSTEMS','MOLECULAR AND CELLULAR BIOLOGY'))
+                         'ACTA THERIOLOGICA', 'NATURE ECOLOGY & EVOLUTION'))
+# cell bio journals: 'CELL', 'CELL RESEARCH','CELL SYSTEMS','MOLECULAR AND CELLULAR BIOLOGY'
 # Correcting specific journal name
 datum <- datum %>% 
   mutate(across(jour,str_replace_all, 
@@ -139,25 +157,25 @@ datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013
                ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
 
 #repeat to apply a lower limit
-#cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2013) & #year is 2013
-#                        (datum$citations < datum$fitted),]$citations)
-#cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2014) & #year is 2014
-#                    (datum$citations < datum$fitted),]$citations)
-#cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2015) & #year is 2015
-#  (datum$citations < datum$fitted),]$citations)
-#cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2016) & #year is 2016
-#  (datum$citations < datum$fitted),]$citations)
-#cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2017) & #year is 2017
-#  (datum$citations < datum$fitted),]$citations)
-#cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-#                        (datum$year==2018) & #year is 2018
-#  (datum$citations < datum$fitted),]$citations)
-
+cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2013) & #year is 2013
+                        (datum$citations < datum$fitted),]$citations)
+cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2014) & #year is 2014
+                    (datum$citations < datum$fitted),]$citations)
+cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2015) & #year is 2015
+  (datum$citations < datum$fitted),]$citations)
+cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2016) & #year is 2016
+  (datum$citations < datum$fitted),]$citations)
+cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2017) & #year is 2017
+  (datum$citations < datum$fitted),]$citations)
+cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+                        (datum$year==2018) & #year is 2018
+  (datum$citations < datum$fitted),]$citations)
+# this code sets all lower citation limits to the lower cutoff from cooks d. 
 #datum$norm_cit=ifelse(datum$year==2013 & datum$citations<cutoff_2013,cutoff_2013,
 #               ifelse(datum$year==2014 & datum$citations<cutoff_2014,cutoff_2014,
 #               ifelse(datum$year==2015 & datum$citations<cutoff_2015,cutoff_2015,
@@ -165,22 +183,27 @@ datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013
 #               ifelse(datum$year==2017 & datum$citations<cutoff_2017,cutoff_2017,
 #               ifelse(datum$year==2018 & datum$citations<cutoff_2018,cutoff_2018,datum$norm_cit))))))
 
-#datum <- datum %>% filter(!(datum$year == 2013 & datum$citations < cutoff_2013)|
-#                          (datum$year == 2014 & datum$citations < cutoff_2014)|
-#                          (datum$year == 2015 & datum$citations < cutoff_2015)|
-#                          (datum$year == 2016 & datum$citations < cutoff_2016)|
-#                          (datum$year == 2017 & datum$citations < cutoff_2017)|
-#                          (datum$year == 2018 & datum$citations < cutoff_2018))
-
+# this code removes rows with citations lower than the cutoffs from cooks d.
+#datumkeptd <- datum %>% filter(!(datum$year == 2013 & datum$citations < cutoff_2013|
+#                          datum$year == 2014 & datum$citations < cutoff_2014|
+#                          datum$year == 2015 & datum$citations < cutoff_2015|
+#                          datum$year == 2016 & datum$citations < cutoff_2016|
+#                          datum$year == 2017 & datum$citations < cutoff_2017|
+#                          datum$year == 2018 & datum$citations < cutoff_2018))
+ # filtering this way results in the loss of 96,635 records
 # TM & AC, cut-off values are way too conservative and we are losing valuable data at the
 #   lower end of the threshold. We can consult with Todd S. for a less arbitrary 
 #   but less conservative way to filter, but for now we will use original cut-off of 5
 
+# exclude rows with less than 10 citations
+#datumkept10 <- datum %>% filter(citations > 9)
+  # this excludes 55,952 records
+#datumkept5 <- datum %>%  filter(citations > 4)
+  # this excludes 25,701 records 
 datum <- datum %>% filter(citations > 4)
 
-
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
-datum$norm_cit_log <- log(datum$norm_cit + 1)
+#datum$norm_cit_log <- log(datum$norm_cit + 1)
 
 # 3b. create new col from OA designations (ie OA, Closed, Other)
 datum$OAdes = replace_na(datum$OAdes, "")
@@ -272,35 +295,63 @@ datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
 
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,norm_cit_log,Volume,
+                          year, auth_loc, auth_count,norm_cit,Volume,
                           Issue, gni_class)
 
 # 5a. adding metadata
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
-# exclude empty fields
+# exclude empty fields; remove the $ from APC
 md <- md %>% dplyr::select(!(starts_with("X")))
 md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
 
 # 5b. joining metadata with clean data
 datum <- left_join(datum, md, by = "jour")
 # Removing Cell Bio field, because we removed cell bio journals
-datum <-datum %>% filter(field != "CellBio")
+#datum <-datum %>% filter(field != "CellBio")
 
-# 5c. Generating a matched dataset
+# 5c. Generating a matched dataset for Other Gold vs Closed
   #Initializing empty list
-matchlist <- list()
+OCmatchlist <- list()
   # Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
 jnames <- unique(datum$jour)
 # Apply splitbyjournal and subsequent matchbytibble functions
 sapply(jnames, splitbyjournal)
-
 # Convert list of lists to data.frame
-matched <- as.data.frame(rbindlist(matchlist))
+OCmatched <- as.data.frame(rbindlist(OCmatchlist))
+
+# Redefining function for Green access 
+## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
+splitbyjournal <- function(journal) {
+  # OA designation patterns needed to match; using grep so regex should work 
+  patt <- c("^$", "Green")
+  # subset single journal in dataset
+  sjournal <- datum %>% filter(jour == journal)
+  # Filtering for target OA designations in a single journal
+  fsjournal <- sjournal %>% 
+    filter(grepl(paste(patt, collapse = "|"), OAdes))
+  # Intersection of Volume-Issue combinations that had either target OA designation. 
+  sectjournal <- sjournal %>% 
+    semi_join(fsjournal, by =c("Volume", "Issue"))
+  # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
+  sectjournal %>% 
+    group_split(Volume,Issue) %>% 
+    map(~ GAmatchbytibble(.x))
+}
+
+# 5c. Generating a matched dataset for Green vs Closed access
+#Initializing empty list
+GCmatchlist <- list()
+# Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
+jnames <- unique(datum$jour)
+# Apply splitbyjournal and subsequent matchbytibble functions
+sapply(jnames, splitbyjournal)
+# Convert list of lists to data.frame
+GCmatched <- as.data.frame(rbindlist(GCmatchlist))
 
 # 5d. Write final files
 write_csv(datum, file = "data/OA_data_fin.csv")
-write_csv(matched, file = "data/matched_OA_data_fin.csv")
-
+write_csv(OCmatched, file = "data/OCmatched_OA_data_fin.csv")
+write_csv(GCmatched, file = "data/GCmatched_OA_data_fin.csv")
 # 6. Make data tables
 t1=datum[,c("year","jour","field","norm_cit","OAlab")]
 t1$jour=as.factor(t1$jour)
