@@ -18,6 +18,8 @@ rm(list=ls(all.names=TRUE))
 library(ggplot2)
 # install.packages('tidyverse') # run once
 library(tidyverse)
+# install.packages('broom') # run once
+library(broom)
 #install.packages('knitr')
 library(knitr)
 #install.packages('doBy')
@@ -69,9 +71,9 @@ length(unique(sort(datum$field)))
 
 # summary stats by OA label
 sum.stat <- datum %>% group_by(OAlab) %>% 
-  summarise(mean_cite = round(mean(clean_citations),2),
-            sd_cite = round(sd(clean_citations),2),
-            num_cite = length(clean_citations))
+  summarise(mean_cite = round(mean(norm_cit),2),
+            sd_cite = round(sd(norm_cit),2),
+            num_cite = length(norm_cit))
 
 
 # output summary stats
@@ -116,23 +118,21 @@ hist(datum$auth_count, breaks = 100)
 datum <- datum %>% 
   mutate(auth_count_scaled = scale(auth_count),
          AIS_scaled = scale(AIS))
-
-#--- this makes a matrix inside of our dataframe
-
 #datum$auth_count_scaled <- scale(datum$auth_count)
 #datum$AIS_scaled <- scale(datum$AIS)
+# this makes a matrix inside of our dataframe
 
 
 # Statistical Tests ================
 
 # Recode categorical fields (deviation- compares level to grand mean)
-contrasts(datum$field) = contr.sum(12)
+contrasts(datum$field) = contr.sum(11)
 contrasts(datum$year) = contr.sum(6)
 
-##### Poisson's that didn't converge :( #####
+##### Models that didn't converge :( #####
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
                   (1|field/jour), 
               data = datum, family = poisson(link = "log"))
 summary(mod2.1)
@@ -155,10 +155,18 @@ Anova(mod2.1)
   #                                  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
   #                                  - Rescale variables?
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
+
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
-summary(mod2.2)
-Anova(mod2.2)
+
+Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
+Mod2.2 <- Mod2.2 %>% mutate(Exp_Estim =exp(Estimate))
+  
+  
+mod2.3 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
+                data = datum, family = poisson(link = "log"))
+summary(mod2.3)
+Anova(mod2.3)
 # Previous message (before 8/30/21)
 #Warning messages:
   #1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :

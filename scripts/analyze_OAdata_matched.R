@@ -117,7 +117,7 @@ summary(mod2.1)
 Anova(mod2.1)
 
 #using citation advantage (need to remove vol_issue since there is one observation per vol_issue combination)
-mod2.2 <- glmer(paid_cit_diff~JCR_quart+AIS+APC+field+(1|field:jour), 
+mod2.2 <- glmer(paid_cit_diff~JCR_quart+AIS+APC+field+(1|field:jour:Volume:Issue), 
                 data = merged) #, family = gaussian(link = "identity"))
 #Warning messages:
 #  1: In glmer(paid_cit_diff ~ JCR_quart + AIS + APC + field + (1 | field:jour),  :
