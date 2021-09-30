@@ -387,7 +387,7 @@ summary(a_coo_merged$cit_diff)
 data(wrld_simpl)
 brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
 a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
-colours=c("#cb181d","#fb6a4a","#fcae91","#fee5d9")
+colours=rev(c("#cb181d","#fb6a4a","#fcae91","#fee5d9"))
 a_coo_merged$colors=as.character(cut(a_coo_merged$cit_diff,breaks=brks,labels=colours,include.lowest=T))
 
 #remove NAs
