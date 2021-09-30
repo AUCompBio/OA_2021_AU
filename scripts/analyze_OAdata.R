@@ -394,10 +394,18 @@ a_coo_merged$colors=as.character(cut(a_coo_merged$cit_diff,breaks=brks,labels=co
 a_coo_merged=subset(a_coo_merged,!is.na(a_coo_merged$colors))
 
 myCountries = wrld_simpl@data$NAME %in% a_coo_merged$auth_loc
+test=data.frame(myCountries,wrld_simpl@data$NAME)
+new_col=vector(length = length(wrld_simpl@data$NAME))
+#get color list
+for (g in 1:length(wrld_simpl@data$NAME)) {
+new_col[g]=ifelse(test$myCountries[g]==TRUE,a_coo_merged$colors[a_coo_merged$auth_loc==test$wrld_simpl.data.NAME[[g]]],"#FFFFFF")
+  }
+test$color=new_col
+
 png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
-plot(wrld_simpl, col = a_coo_merged$colors[myCountries])
+plot(wrld_simpl, col = test$color)
 legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
-       fill=rev(colours), bty="n",cex=1.5)
+       fill=(colours), bty="n",cex=1.5)
 dev.off()
 
 
