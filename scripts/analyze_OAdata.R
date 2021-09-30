@@ -266,6 +266,7 @@ data_summary <- function (datum) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 
+#plots access time by author count; not really useful plot
 plot(norm_cit ~ APC, data = datum)
 ggplot(datum, aes(x=APC, y=norm_cit, color=OAlab)) +
   geom_point() + facet_wrap(~auth_count) 
@@ -295,7 +296,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
-
+vplot
 ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 #further delving into the research fields
@@ -340,7 +341,7 @@ dev.off()
 
 # violin plot: Citations by Journal C Rank (JCR) quartile
 
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) +
   facet_wrap(~JCR_quart)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
@@ -379,16 +380,16 @@ ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/"
 
 
 # violin plot: Citations by Corresponding Author Country of Origin
-
-vplot <- ggplot(datum,aes(x=OAlab,y=clean_citations,fill=OAlab)) +
+#Not a meaningful plot - too much going on!
+vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
   geom_violin(trim=FALSE) +
   facet_wrap(~auth_loc)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+vplot
+#ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 
@@ -426,14 +427,25 @@ summary(a_coo_merged$cit_diff)
 data(wrld_simpl)
 brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
 a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
-colours=c("#cb181d","#fb6a4a","#fcae91","#fee5d9")
+colours=rev(c("#cb181d","#fb6a4a","#fcae91","#fee5d9"))
 a_coo_merged$colors=as.character(cut(a_coo_merged$cit_diff,breaks=brks,labels=colours,include.lowest=T))
 
+#remove NAs
+a_coo_merged=subset(a_coo_merged,!is.na(a_coo_merged$colors))
+
 myCountries = wrld_simpl@data$NAME %in% a_coo_merged$auth_loc
+test=data.frame(myCountries,wrld_simpl@data$NAME)
+new_col=vector(length = length(wrld_simpl@data$NAME))
+#get color list
+for (g in 1:length(wrld_simpl@data$NAME)) {
+new_col[g]=ifelse(test$myCountries[g]==TRUE,a_coo_merged$colors[a_coo_merged$auth_loc==test$wrld_simpl.data.NAME[[g]]],"#FFFFFF")
+  }
+test$color=new_col
+
 png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
-plot(wrld_simpl, col = a_coo_merged$colors[myCountries])
+plot(wrld_simpl, col = test$color)
 legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
-       fill=rev(colours), bty="n",cex=1.5)
+       fill=(colours), bty="n",cex=1.5)
 dev.off()
 
 
