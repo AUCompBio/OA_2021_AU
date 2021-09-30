@@ -132,6 +132,10 @@ datum <- datum %>%
 ##### 3a. create new col(s) with univariate outliers corrected##### 
 #approach to apply threshold to high citation values - citation count is correlated with year
 mod=lm(datum$citations~datum$year)
+
+#get model plot for supplement
+plot(mod) #save first plot to PDF. Current name: "Residuals vs Leverage Plot with Cook's Distance"
+
 # calculate cooks d for all data
 datum$cooksd <- cooks.distance(mod)
 #get linear fit of all values
