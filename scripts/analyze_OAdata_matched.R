@@ -169,65 +169,12 @@ contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
 
 
-##### Models that didn't converge :( #####
-# Poisson regression using norm_cit as response
-  # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
-                  (1|field/jour), 
-              data = datum, family = poisson(link = "log"))
+#using citation count raw
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field:jour:vol_issue), 
+                data = matched, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
-# Previous Warning (before 8/30/21)
-#Warning messages:
-  #  1: Some predictor variables are on very different scales: consider rescaling 
-  #  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                  Model failed to converge with max|grad| = 0.0449433 (tol = 0.002, component 1)
-  #                3: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                                  Model is nearly unidentifiable: very large eigenvalue
-  #                                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-  #                                - Rescale variables?
-# Warning message as of 8/30/21
-#Warning messages:
-  #  1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                    Model failed to converge with max|grad| = 0.0166963 (tol = 0.002, component 1)
-  #                  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                                    Model is nearly unidentifiable: very large eigenvalue
-  #                                  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-  #                                  - Rescale variables?
-  # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
-                data = datum, family = poisson(link = "log"))
-
-Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
-Mod2.2 <- Mod2.2 %>% mutate(Exp_Estim =exp(Estimate))
-
-## interaction with gni_class & access level
-mod2.3 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*gni_class+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
-                data = datum, family = poisson(link = "log"))
-
-Mod2.3 <- as.data.frame(coef(summary(mod2.3)))
-Mod2.3 <- Mod2.3 %>% mutate(Exp_Estim =exp(Estimate))
-
-# Previous message (before 8/30/21)
-#Warning messages:
-  #1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                    Model failed to converge with max|grad| = 0.00371365 (tol = 0.002, component 1)
-  #2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                                    Model is nearly unidentifiable: very large eigenvalue
-  #- Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-  #- Rescale variables?
-# Warning message as of 8/30/21
-#Warning message:
- #  In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
- #                 Model is nearly unidentifiable: very large eigenvalue
- #               - Rescale variables?
-# export results from anova to .txt file
-
-sink("clean_results_anova_WOS2.txt")
-print(summary(model))
-print(confint(model))
-sink()  # returns output to the console
 
 # Plotting ============
 
@@ -449,89 +396,3 @@ legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
 dev.off()
 
 
-#### ARCHIVED MODEL BUILDING ####
-#### general linear model using norm_cite as the response
-##mod1 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+APC+year+(1|field:jour), 
-##             data = datum)
-##summary(mod1)
-#anova(mod1)
-#
-## general linear model using ln-transformed norm_cite as the response
-#mod1.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")+auth_count+field+JCR_quart+AIS+scale(APC)+year+pub+(1|field:jour), 
-#                 data = datum)
-#summary(mod1.log)
-#anova(mod1.log)
-##Anova(mod1.log)
-### Note: mod1 and mod1 with the log-transformed norm_cit response both recover the fit warning:
-### some predictor variables are on very different scales
-#
-#
-## general linear model using norm_cite as the response. Including interactions for access by field and author count by APC
-#mod1.2 <- lmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
-#               data = datum)
-#summary(mod1.2)
-#Anova(mod1.2, type = 3)
-#
-## general linear model using norm_cit_log as the response. Including interactions for access by field and author count by APC
-#mod1.2.log <- lmer(norm_cit_log~relevel(OAlab, ref = "Closed Access")*field+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field:jour), 
-#                   data = datum)
-#summary(mod1.2.log)
-#Anova(mod1.2.log, type = 3)
-## Pub is not significant-- removed from model.
-#
-## Comparing norm_cit_log models with and without interactions
-#anova(mod1.log,mod1.2.log)
-#
-#mod2.3 <-  glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+field+JCR_quart+AIS+year+(1|field:jour), 
-#                 data = datum, family = poisson(link = "log"))
-#summary(mod2.3)
-##Warning messages:
-##  1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-##                    Model failed to converge with max|grad| = 1.75564 (tol = 0.002, component 1)
-##  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-##                   Model is nearly unidentifiable: very large eigenvalue
-##  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-##  - Rescale variables?
-#
-## basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-#mod2.4 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count*scale(APC)+JCR_quart+AIS+year+(1|field/jour), 
-#                data = datum, family = poisson(link = "log"))
-#summary(mod2.4)
-## basic model of most factors (numerical factors scaled) plus interaction of auth_count and APC,with random effects of field and journal nested in field 
-## increased the number of iterations using maxfun = 200,000 (started with 10, 50, 80,000; 100, 150,000)
-#mod2.5 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+scale(auth_count)*scale(APC)+JCR_quart+scale(AIS)+(1|field/jour), 
-#                data = datum, family = poisson(link = "log"), control = glmerControl( optCtrl = list(maxfun = 200000)))
-#summary(mod2.5)
-## model with only terms that we are interested in interactions between, with random effect of journal nested in field
-#mod2.6 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*field+scale(auth_count)*scale(APC)+(1|field:jour), 
-#                data = datum, family = poisson(link = "log"))
-#summary(mod2.6)
-#  # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
-#
-## Tried starting the model from where it failed to converge
-#ss <- getME(mod2.5,c("theta","fixef"))
-#model_2 <- update(mod2.5,start=ss)
-#
-##Checking for singularity (want this value to not be close to zero)
-## https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
-#tt <- getME(mod2.5,"theta")
-#ll <- getME(mod2.5,"lower")
-#min(tt[ll==0])
-#
-##
-#ranef(mod2.5)
-#fixef(mod2.5)
-#
-## Plotting estimates
-#theme_set(theme_sjplot())
-#plot_model(mod2.5,sort.est = TRUE,show.values = TRUE,
-#           value.offset = .4,vline.color = "green")
-#plot_model(mod2.5, type = 're')
-#
-#range(datum$AIS)
-
-#datum$norm_cit_log <- log(datum$norm_cit + 1) 
-
-#hist(datum$norm_cit_log)
-#mean(datum$norm_cit_log)
-#var(datum$norm_cit_log)
