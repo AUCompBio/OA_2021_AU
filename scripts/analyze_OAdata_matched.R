@@ -168,6 +168,7 @@ datum <- datum %>%
 contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
 
+# Scale variables, double-check nestedness/definition of random variable -TANNER
 
 #using citation count raw
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field:jour:vol_issue), 
