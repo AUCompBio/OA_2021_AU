@@ -39,51 +39,33 @@ datum <- as.data.frame(rbindlist(datumlist))
 datum$`Open Access Designations`= replace_na(datum$`Open Access Designations`, "")
 
 
-# OA/CA Matched Issues =========
+# Matched Issues =========
 # Functions and subsequent code to produce OA/CA matched issues dataframe
 
 ## Function that takes grouped data.frames and checks for the presence of both target OA designation patterns in each group
-OAmatchbytibble <- function(tibs) {
+matchbytibble <- function(tibs) {
   # OA designation patterns needed to match; using grep so regex should work 
-  patt <- c("^$", "Other Gold")
+  patt <- c("Green", "Other Gold")
   # Check for Other Gold in the designation field
   ckgold <- any(grepl(patt[[2]],tibs$OAdes))
   # Check for blanks in the designation field
-  ckblank <- any(grepl(patt[[1]],tibs$OAdes))
+  ckgreen <- any(grepl(patt[[1]],tibs$OAdes))
   
   # If ckgold & ckblank evaluate at TRUE...else...
-  if (ckgold == TRUE && ckblank == TRUE) {
+  if (ckgold == TRUE && ckgreen == TRUE) {
     # add tib in list form to matched list of data.tables
-    OCmatchlist <<- append(OCmatchlist, list(tibs)) 
-    print("Both subscription (blank) and Other Gold designations are found in this issue. Writing to matched dataframe...")
+    matchlist <<- append(matchlist, list(tibs)) 
+    print("Both Green and Other Gold designations are found in this issue. Writing to matched dataframe...")
   } else {
-    print("Subscription (blank) and/or Other Gold designations were not found in this issue. Omitting this issue from the matched dataframe.")
+    print("Green and/or Other Gold designations were not found in this issue. Omitting this issue from the matched dataframe.")
   }
 }
-## Function that takes grouped data.frames and checks for the presence of both target OA designation patterns in each group
-    #here matching closed and green access articles
-GAmatchbytibble <- function(tibs) {
-  # OA designation patterns needed to match; using grep so regex should work 
-  patt <- c("^$", "Green")
-  # Check for Other Gold in the designation field
-  ckgreen <- any(grepl(patt[[2]],tibs$OAdes))
-  # Check for blanks in the designation field
-  ckblank <- any(grepl(patt[[1]],tibs$OAdes))
-  
-  # If ckgold & ckblank evaluate at TRUE...else...
-  if (ckgreen == TRUE && ckblank == TRUE) {
-    # add tib in list form to matched list of data.tables
-    GCmatchlist <<- append(GCmatchlist, list(tibs)) 
-    print("Both subscription (blank) and Green designations are found in this issue. Writing to matched dataframe...")
-  } else {
-    print("Subscription (blank) and/or Green designations were not found in this issue. Omitting this issue from the matched dataframe.")
-  }
-}
+
 
 ## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
 splitbyjournal <- function(journal) {
   # OA designation patterns needed to match; using grep so regex should work 
-  patt <- c("^$", "Other Gold")
+  patt <- c("Green", "Other Gold")
   # subset single journal in dataset
   sjournal <- datum %>% filter(jour == journal)
   # Filtering for target OA designations in a single journal
@@ -95,7 +77,7 @@ splitbyjournal <- function(journal) {
   # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
   sectjournal %>% 
     group_split(Volume,Issue) %>% 
-    map(~ OAmatchbytibble(.x))
+    map(~ matchbytibble(.x))
 }
 
 # Clean up =====================
@@ -315,47 +297,47 @@ datum <- left_join(datum, md, by = "jour")
 
 # 5c. Generating a matched dataset for Other Gold vs Closed
   #Initializing empty list
-OCmatchlist <- list()
+matchlist <- list()
   # Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
 jnames <- unique(datum$jour)
 # Apply splitbyjournal and subsequent matchbytibble functions
 sapply(jnames, splitbyjournal)
 # Convert list of lists to data.frame
-OCmatched <- as.data.frame(rbindlist(OCmatchlist))
+matched <- as.data.frame(rbindlist(matchlist))
 
 # Redefining function for Green access 
 ## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
-splitbyjournal <- function(journal) {
+#splitbyjournal <- function(journal) {
   # OA designation patterns needed to match; using grep so regex should work 
-  patt <- c("^$", "Green")
+#  patt <- c("^$", "Green")
   # subset single journal in dataset
-  sjournal <- datum %>% filter(jour == journal)
+#  sjournal <- datum %>% filter(jour == journal)
   # Filtering for target OA designations in a single journal
-  fsjournal <- sjournal %>% 
-    filter(grepl(paste(patt, collapse = "|"), OAdes))
+#  fsjournal <- sjournal %>% 
+#    filter(grepl(paste(patt, collapse = "|"), OAdes))
   # Intersection of Volume-Issue combinations that had either target OA designation. 
-  sectjournal <- sjournal %>% 
-    semi_join(fsjournal, by =c("Volume", "Issue"))
+#  sectjournal <- sjournal %>% 
+#    semi_join(fsjournal, by =c("Volume", "Issue"))
   # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
-  sectjournal %>% 
-    group_split(Volume,Issue) %>% 
-    map(~ GAmatchbytibble(.x))
-}
+#  sectjournal %>% 
+#    group_split(Volume,Issue) %>% 
+#    map(~ GAmatchbytibble(.x))
+#}
 
 # 5c. Generating a matched dataset for Green vs Closed access
 #Initializing empty list
-GCmatchlist <- list()
+#GCmatchlist <- list()
 # Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
-jnames <- unique(datum$jour)
+#jnames <- unique(datum$jour)
 # Apply splitbyjournal and subsequent matchbytibble functions
-sapply(jnames, splitbyjournal)
+#sapply(jnames, splitbyjournal)
 # Convert list of lists to data.frame
-GCmatched <- as.data.frame(rbindlist(GCmatchlist))
+#GCmatched <- as.data.frame(rbindlist(GCmatchlist))
 
 # 5d. Write final files
 write_csv(datum, file = "data/OA_data_fin.csv")
-write_csv(OCmatched, file = "data/OCmatched_OA_data_fin.csv")
-write_csv(GCmatched, file = "data/GCmatched_OA_data_fin.csv")
+write_csv(matched, file = "data/matched_OA_data_fin.csv")
+#write_csv(GCmatched, file = "data/GCmatched_OA_data_fin.csv")
 # 6. Make data tables
 t1=datum[,c("year","jour","field","norm_cit","OAlab")]
 t1$jour=as.factor(t1$jour)
