@@ -43,7 +43,7 @@ library(performance)
 #install.packages("stargazer")
 library(stargazer) # stargazer does not like tibbles
 
-datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+datum <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
 
 
 # check data
@@ -51,18 +51,21 @@ names(datum)
 head(datum)
 summary(datum)
 
+#combine volume and issue into single column
+datum$vol_issue=paste(datum$Volume,datum$Issue,sep=".")
+
 # code for generating tables and output in Latex format
 stardat <- as.data.frame(datum)
 stargazer(stardat[c("citations", "year", "auth_count",
                     "norm_cit", "Volume", "Issue", "JCR_quart",
-                    "AIS")], 
+                    "AIS", "APC")], 
           type = "text",
           title = "Summary Statistics for Full Open Access Dataset",
           covariate.labels = c("Raw Citation Count", "Publication Year",
                                "Author Count", "Normalized Citation Count",
-                               "Volume", "Issue", "Journal Citation Reports Quartiles",
-                               "Article Influence Score"),
-          out = "outputs/stats/OA_datum_sumstats.tex")
+                               "Volume", "Issue", "vol_issue", "Journal Citation Reports Quartiles",
+                               "Article Influence Score", "Article Processing Charge"),
+          out = "outputs/stats/matched_OA_datum_sumstats.tex")
 
 # Summary Stats =================
 # comment
@@ -119,7 +122,7 @@ gni.stat <- datum %>% group_by(gni_class) %>%
             num_cite = length(norm_cit))
 
 # output summary stats
-sink("outputs/stats/OAdes_summarystats")
+sink("outputs/stats/matched_OAdes_summarystats")
 kable(sum.stat)
 sink()
 
@@ -172,7 +175,7 @@ contrasts(datum$year) = contr.sum(6)
 
 #using citation count raw
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field:jour:vol_issue), 
-                data = matched, family = poisson)
+                data = datum, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
 
