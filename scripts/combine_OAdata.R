@@ -301,12 +301,24 @@ summary(apc_data$USD.cleaned)
 #median is 3000
 length(apc_data$Journal)
 #5826 journals
+hist(apc_data$USD.cleaned,xlab="Dollars", main="APC across publishers in USD")
+#add abline for potential cutoffs
+abline(v=3000, col="blue")
+abline(v=3490, col="red")
 
 #apply classification (need to add a label for green to be free)
-datum$apc_cat=ifelse(datum$APC>3000 & datum$OAlab=="Closed Access","hiAPC",ifelse(datum$APC<=3000 & datum$OAlab=="Closed Access","lowAPC","noAPC"))
-#14999 records are hiAPC
-#13016 records are lowAPC
-#61982 records are noAPC
+datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(datum$APC<=3490 & datum$OAlab=="Other Gold","lowAPC","noAPC"))
+
+#qc:
+length(datum$apc_cat[datum$apc_cat=="hiAPC"])
+#9484 records are hiAPC
+length(datum$apc_cat[datum$apc_cat=="lowAPC"])
+#3834 records are lowAPC
+length(datum$apc_cat[datum$apc_cat=="noAPC"])
+#76679 records are noAPC
+#last number should match number not labeled as Other Gold
+length(datum$OAlab[datum$OAlab!="Other Gold"])
+#76679 records are labeled as NOT other gold
 
 # 5c. Generating a matched dataset for Other Gold vs Closed
   #Initializing empty list
