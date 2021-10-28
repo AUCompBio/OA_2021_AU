@@ -295,6 +295,19 @@ datum <- left_join(datum, md, by = "jour")
 # Removing Cell Bio field, because we removed cell bio journals
 #datum <-datum %>% filter(field != "CellBio")
 
+# 5b+. converting APC to categorical variable
+apc_data=read.csv(file="data/PublisherAPCs_combined.csv")
+summary(apc_data$USD.cleaned)
+#median is 3000
+length(apc_data$Journal)
+#5826 journals
+
+#apply classification (need to add a label for green to be free)
+datum$apc_cat=ifelse(datum$APC>3000 & datum$OAlab=="Closed Access","hiAPC",ifelse(datum$APC<=3000 & datum$OAlab=="Closed Access","lowAPC","noAPC"))
+#14999 records are hiAPC
+#13016 records are lowAPC
+#61982 records are noAPC
+
 # 5c. Generating a matched dataset for Other Gold vs Closed
   #Initializing empty list
 matchlist <- list()
