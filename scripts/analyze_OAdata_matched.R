@@ -45,7 +45,6 @@ library(stargazer) # stargazer does not like tibbles
 
 datum <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
 
-
 # check data
 names(datum)
 head(datum)
@@ -75,7 +74,7 @@ stargazer(stardat[c("citations", "year", "auth_count",
 
 # print number of records per journal
 datum$jour = as.factor(datum$jour) # reset as factor
-sink("outputs/stats/recordnum_journal.txt")
+sink("outputs/stats/matched_recordnum_journal.txt")
 summary(datum$jour) # print number
 sink()
 
@@ -140,6 +139,7 @@ datum$JCR_quart <- as.factor(datum$JCR_quart)
 datum$pub <- as.factor(datum$pub)
 datum$year <- as.factor(datum$year)
 datum$gni_class <- as.factor(datum$gni_class)
+datum$vol_issue <- as.factor(datum$vol_issue)
 levels(datum$year)
 
 # Plot histogram; estimate mean & variance for response variables
@@ -162,9 +162,8 @@ hist(datum$auth_count, breaks = 100)
 # Rescaled numerical fields, into new columns
 datum <- datum %>% 
   mutate(auth_count_scaled = scale(auth_count,center = TRUE, scale = TRUE),
-         AIS_scaled = scale(AIS,center = TRUE, scale = TRUE))
-#datum$auth_count_scaled <- scale(datum$auth_count)
-#datum$AIS_scaled <- scale(datum$AIS)
+         AIS_scaled = scale(AIS,center = TRUE, scale = TRUE), 
+         APC_scaled = scale(APC,center = TRUE, scale = TRUE))
 # this makes a matrix inside of our dataframe
 
 
@@ -174,10 +173,9 @@ datum <- datum %>%
 contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
 
-# Scale variables, double-check nestedness/definition of random variable -TANNER
-
 #using citation count raw
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field/jour/vol_issue), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+
+                  APC_scaled+AIS_scaled+(1|field/jour/vol_issue), 
                 data = datum, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
@@ -238,7 +236,7 @@ vplot + annotate(geom="text", x="Bronze", y=-20, label = sum.stat[1,4])+
   annotate(geom="text", x="Green", y=-20, label = sum.stat[3,4])+
   annotate(geom="text", x="Other Gold", y=-20, label = sum.stat[4,4])
 # + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.8, binwidth=1) # add above to include data points in plot
-ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_OAdes_matched.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 # violin plot: Citations by Access Designation for each field
@@ -251,7 +249,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 vplot
-ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_Field_OAdes_matched.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 #further delving into the research fields
 #downloaded from InCites
@@ -285,7 +283,7 @@ rf_merged$gold_cit_diff=ifelse(is.na(rf_merged$`Other Gold total records`),NA,rf
 rf_merged$cit_diff=ifelse(is.na(rf_merged$`total records`),NA,((rf_merged$`Other gold mean cit`+rf_merged$`Green mean cit`+rf_merged$`Bronze mean cit`)/3)-rf_merged$`Closed Access mean cit`)
 
 #plot cit diff versus field rank
-png(filename="outputs/plots/fieldRank_vs_cit_diff.png",width=8,height=8,res=300,pointsize=9,units="in")
+png(filename="outputs/plots/fieldRank_vs_cit_diff_matched.png",width=8,height=8,res=300,pointsize=9,units="in")
 par(mfrow=c(2,2)) 
 plot(rf_merged$Rank,rf_merged$cit_diff,main="Research Field Rank vs. OA Cit Difference (Overall)",xlab="Research Field Rank",ylab="All OA vs CA citation # diff",pch=16)
 plot(rf_merged$Rank,rf_merged$bronze_cit_diff,main="Research Field Rank vs. Bronze OA Cit Difference",xlab="Research Field Rank",ylab="Bronze OA vs CA citation # diff",pch=16)
@@ -303,7 +301,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-ggsave("clean_vplot_JCR_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_JCR_OAdes_matched.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 
@@ -317,7 +315,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_Year_OAdes_matched.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 # violin plot: Citations by Publisher
@@ -330,7 +328,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+ggsave("clean_vplot_Publisher_OAdes_matched.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 # violin plot: Citations by Corresponding Author Country of Origin
@@ -396,7 +394,7 @@ new_col[g]=ifelse(test$myCountries[g]==TRUE,a_coo_merged$colors[a_coo_merged$aut
   }
 test$color=new_col
 
-png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
+png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff_matched.png",res=300,pointsize=7,width=8,height=6,units="in")
 plot(wrld_simpl, col = test$color)
 legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
        fill=(colours), bty="n",cex=1.5)
