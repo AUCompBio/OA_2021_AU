@@ -56,15 +56,18 @@ datum$vol_issue=paste(datum$Volume,datum$Issue,sep=".")
 
 # code for generating tables and output in Latex format
 stardat <- as.data.frame(datum)
+#stardat <- stardat[na.omit(stardat$APC),]
 stargazer(stardat[c("citations", "year", "auth_count",
-                    "norm_cit", "Volume", "Issue", "JCR_quart",
-                    "AIS", "APC")], 
+                    "norm_cit", "Volume", "Issue", "vol_issue", "JCR_quart",
+                    "AIS", "APC", "apc_cat")], 
           type = "text",
           title = "Summary Statistics for Full Open Access Dataset",
           covariate.labels = c("Raw Citation Count", "Publication Year",
                                "Author Count", "Normalized Citation Count",
-                               "Volume", "Issue", "vol_issue", "Journal Citation Reports Quartiles",
-                               "Article Influence Score", "Article Processing Charge"),
+                               "Volume", "Issue", #"Volume and Issue", 
+                               "Journal Citation Reports Quartiles",
+                               "Article Influence Score", "Article Processing Charge"#, "Article Processing Charge Category"
+                               ),
           out = "outputs/stats/matched_OA_datum_sumstats.tex")
 
 # Summary Stats =================
@@ -174,7 +177,7 @@ contrasts(datum$year) = contr.sum(6)
 # Scale variables, double-check nestedness/definition of random variable -TANNER
 
 #using citation count raw
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field:jour:vol_issue), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+AIS+(1|field/jour/vol_issue), 
                 data = datum, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
