@@ -140,6 +140,7 @@ datum$pub <- as.factor(datum$pub)
 datum$year <- as.factor(datum$year)
 datum$gni_class <- as.factor(datum$gni_class)
 datum$vol_issue <- as.factor(datum$vol_issue)
+datum$apc_cat <- as.factor(datum$apc_cat)
 levels(datum$year)
 
 # Plot histogram; estimate mean & variance for response variables
@@ -163,7 +164,8 @@ hist(datum$auth_count, breaks = 100)
 datum <- datum %>% 
   mutate(auth_count_scaled = scale(auth_count,center = TRUE, scale = TRUE),
          AIS_scaled = scale(AIS,center = TRUE, scale = TRUE), 
-         APC_scaled = scale(APC,center = TRUE, scale = TRUE))
+         APC_scaled = scale(APC,center = TRUE, scale = TRUE)) 
+  ## APC no longer needs to be scaled as we're using a categorical variable based on bins of APC values
 # this makes a matrix inside of our dataframe
 
 
@@ -174,8 +176,8 @@ contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
 
 #using citation count raw
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+field+JCR_quart+
-                  APC_scaled+AIS_scaled+(1|field/jour/vol_issue), 
+mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+JCR_quart+apc_cat
+                +AIS_scaled+(1|field/jour/vol_issue), 
                 data = datum, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
