@@ -177,11 +177,14 @@ contrasts(datum$year) = contr.sum(6)
 
 #using citation count raw
 mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+JCR_quart+apc_cat
-                +AIS_scaled+(1|field/jour/vol_issue), 
+                +AIS_scaled+ (1|field/jour/vol_issue), 
                 data = datum, family = poisson)
 summary(mod2.1)
 Anova(mod2.1)
 
+## examining rank deficiency of fixed-effect model:
+fix.2.1.formula <- norm_cit~relevel(OAlab, ref = "Closed Access")+JCR_quart+apc_cat+AIS_scaled
+x <- model.matrix(fix.2.1.formula, datum)
 
 # Plotting ============
 
