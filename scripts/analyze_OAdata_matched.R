@@ -186,6 +186,12 @@ Anova(mod2.1)
 fix.2.1.formula <- norm_cit~relevel(OAlab, ref = "Closed Access")+JCR_quart+apc_cat+AIS_scaled
 x <- model.matrix(fix.2.1.formula, datum)
 
+mod2.2 <- glmer(norm_cit~OAlab+JCR_quart+apc_cat
+                +AIS_scaled+ (1|field/jour/vol_issue), 
+                data = datum, family = poisson)
+summary(mod2.2)
+Anova(mod2.2)
+
 # Plotting ============
 
 # reset vars
