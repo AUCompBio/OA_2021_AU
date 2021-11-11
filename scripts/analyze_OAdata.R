@@ -80,23 +80,7 @@ length(unique(sort(datum$jour)))
 #number of field
 length(unique(sort(datum$field)))
 
-# grand mean of norm_cit
-mean(datum$norm_cit)
-# means for norm_cit across levels of categorical variables
-myr <- with(datum, tapply(norm_cit, year, mean))
-moa <- with(datum, tapply(norm_cit, OAlab, mean))
-mjcr <- with(datum, tapply(norm_cit, JCR_quart, mean))
-mgni <- with(datum, tapply(norm_cit, gni_class, mean))
-# differences between levels for each categ. var.
-  #successive when level > 2
-dyr <- diff(myr)
-doa <- diff(moa)
-djcr <- diff(mjcr)
-dgni <- diff(mgni)
-#means of each combination of all categorical variables
-m2var <- with(datum,tapply(norm_cit,list(year,gni_class,OAlab,JCR_quart),mean))
-#mean of year when all other categories are reference values
-mean(m2var[,"High", "Closed Access", 1])
+
 # summary stats by OA label ---more detail than the mean calculations above, but should agree
 sum.stat <- datum %>% group_by(OAlab) %>% 
   summarise(mean_cite = round(mean(norm_cit),2),
@@ -164,11 +148,6 @@ datum <- datum %>%
 
 # Statistical Tests ================
 
-# Recode year field (deviation- compares level to grand mean)
-contrasts(datum$year) = contr.sum(6)
-# contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
-
-
 ##### Models that didn't converge :( #####
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
@@ -196,7 +175,7 @@ Anova(mod2.1)
   #                                  - Rescale variables?
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class+(1|field/jour), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+(1|field/jour)+(1|year), 
                 data = datum, family = poisson(link = "log"))
 
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
@@ -535,3 +514,27 @@ dev.off()
 #hist(datum$norm_cit_log)
 #mean(datum$norm_cit_log)
 #var(datum$norm_cit_log)
+
+### mean calculations
+# grand mean of norm_cit
+#mean(datum$norm_cit)
+# means for norm_cit across levels of categorical variables
+#myr <- with(datum, tapply(norm_cit, year, mean))
+#moa <- with(datum, tapply(norm_cit, OAlab, mean))
+#mjcr <- with(datum, tapply(norm_cit, JCR_quart, mean))
+#mgni <- with(datum, tapply(norm_cit, gni_class, mean))
+# differences between levels for each categ. var.
+#successive when level > 2
+#dyr <- diff(myr)
+#doa <- diff(moa)
+#djcr <- diff(mjcr)
+#dgni <- diff(mgni)
+#means of each combination of all categorical variables
+#m2var <- with(datum,tapply(norm_cit,list(year,gni_class,OAlab,JCR_quart),mean))
+#mean of year when all other categories are reference values
+#mean(m2var[,"High", "Closed Access", 1])
+
+#####
+# Recode year field (deviation- compares level to grand mean)
+#contrasts(datum$year) = contr.sum(6)
+# contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
