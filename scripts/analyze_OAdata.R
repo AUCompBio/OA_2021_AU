@@ -42,6 +42,7 @@ library(numDeriv)
 library(performance)
 #install.packages("stargazer")
 library(stargazer) # stargazer does not like tibbles
+library(MASS)
 
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 
@@ -177,6 +178,20 @@ Anova(mod2.1)
 
 mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+(1|field/jour)+(1|year), 
                 data = datum, family = poisson(link = "log"))
+
+### Remove random effects to evaluate warnings
+mod2.2a <- glm(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+                data = datum, family = poisson(link = "log"))
+### Compare to negative binomial model
+mod2.2c <- glm.nb(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+               data = datum)
+### Changed y variable to explore outliers
+mod2.2b <- glm(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+                      data = datum, family = poisson(link = "log"))
+### Compare to negative binomial model
+mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+                  data = datum)
+
 
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
 Mod2.2 <- Mod2.2 %>% mutate(Exp_Estim =exp(Estimate))
