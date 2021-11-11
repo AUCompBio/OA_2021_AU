@@ -52,6 +52,10 @@ names(datum)
 head(datum)
 summary(datum)
 
+
+# Summary Stats =================
+# comment
+
 # code for generating tables and output in Latex format
 stardat <- as.data.frame(datum)
 stargazer(stardat[c("citations", "year", "auth_count",
@@ -65,8 +69,6 @@ stargazer(stardat[c("citations", "year", "auth_count",
                                "Article Influence Score"),
           out = "outputs/stats/OA_datum_sumstats.tex")
 
-# Summary Stats =================
-# comment
 
 # print number of records per journal
 datum$jour = as.factor(datum$jour) # reset as factor
@@ -110,16 +112,6 @@ sink()
 
 # Data Exploration  ================
 ls.str(datum)
-#need to id variables I want as a factor
-datum$jour <- as.factor(datum$jour)
-datum$OAlab <- as.factor(datum$OAlab)
-datum$field <- as.factor(datum$field)
-datum$jour_loc <- as.factor(datum$jour_loc)
-datum$JCR_quart <- as.factor(datum$JCR_quart)
-datum$pub <- as.factor(datum$pub)
-datum$year <- as.factor(datum$year)
-datum$gni_class <- as.factor(datum$gni_class)
-levels(datum$year)
 
 # Plot histogram; estimate mean & variance for response variables
 hist(datum$citations)#hist(datum$clean_citations)
@@ -138,6 +130,19 @@ var(datum$norm_cit) # for alternative normalization metric
 hist(datum$AIS)
 hist(datum$auth_count, breaks = 100)
 
+
+# Statistical Tests ================
+
+#need to id variables we want as a factor
+datum$jour <- as.factor(datum$jour)
+datum$OAlab <- as.factor(datum$OAlab)
+datum$field <- as.factor(datum$field)
+datum$jour_loc <- as.factor(datum$jour_loc)
+datum$JCR_quart <- as.factor(datum$JCR_quart)
+datum$pub <- as.factor(datum$pub)
+datum$year <- as.factor(datum$year)
+datum$gni_class <- as.factor(datum$gni_class)
+
 # Rescaled numerical fields, into new columns
 datum <- datum %>% 
   mutate(auth_count_scaled = scale(auth_count,center = TRUE, scale = TRUE),
@@ -146,17 +151,14 @@ datum <- datum %>%
 #datum$AIS_scaled <- scale(datum$AIS)
 # this makes a matrix inside of our dataframe
 
-
-# Statistical Tests ================
-
 ##### Models that didn't converge :( #####
 # Poisson regression using norm_cit as response
   # basic model of all factors, with a random effect of journal nested in field
-mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
-                  (1|field/jour), 
-              data = datum, family = poisson(link = "log"))
-summary(mod2.1)
-Anova(mod2.1)
+#mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
+#                  (1|field/jour), 
+#              data = datum, family = poisson(link = "log"))
+#summary(mod2.1)
+#Anova(mod2.1)
 # Previous Warning (before 8/30/21)
 #Warning messages:
   #  1: Some predictor variables are on very different scales: consider rescaling 
@@ -192,8 +194,9 @@ mod2.2b <- glm(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled
 mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
                   data = datum)
 
-
+# Putting model coefficients into a dataframe
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
+# Adding column with interpretable betas
 Mod2.2 <- Mod2.2 %>% mutate(Exp_Estim =exp(Estimate))
 
 ## interaction with gni_class & access level
@@ -222,225 +225,6 @@ sink("clean_results_anova_WOS2.txt")
 print(summary(model))
 print(confint(model))
 sink()  # returns output to the console
-
-# Plotting ============
-
-# reset vars
-datum$APC = as.numeric(datum$APC)
-datum$norm_cit = as.numeric(datum$norm_cit)
-datum$jour = as.character(datum$jour)
-
-# subset datum by auth_count
-tdatum = subset(datum, jour == c('BRAIN',
-                                 'ZOOLOGY',
-                                 'ZEBRAFISH'))
-tdatum$group = as.character(tdatum$group)
-
-# bivar scatter: X x Y x Z
-ggplot(tdatum, aes(x=APC,
-                   y=norm_cit,
-                  col=group)) +
-  geom_point(col='gray') + 
-  geom_smooth(method="lm", se=FALSE, size=.5) + 
-  geom_abline(aes(intercept=0, 
-                  slope=1),
-              data=datum, size=1, 
-              linetype='longdash')
-
-
-
-
-
-
-#compute data summary to add to plot
-data_summary <- function (datum) {
-  m = mean(datum)
-  ymin = m-sd(datum)
-  ymax = m+sd(datum)
-  return(c(y=m,ymin=ymin,ymax=ymax))
-}
-
-#plots access time by author count; not really useful plot
-plot(norm_cit ~ APC, data = datum)
-ggplot(datum, aes(x=APC, y=norm_cit, color=OAlab)) +
-  geom_point() + facet_wrap(~auth_count) 
-
-# violin plot: Citations by Access Designation
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) 
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-vplot + annotate(geom="text", x="Bronze", y=-20, label = sum.stat[1,4])+
-  annotate(geom="text", x="Closed Access", y=-20, label = sum.stat[2,4])+
-  annotate(geom="text", x="Green", y=-20, label = sum.stat[3,4])+
-  annotate(geom="text", x="Other Gold", y=-20, label = sum.stat[4,4])
-# + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.8, binwidth=1) # add above to include data points in plot
-ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-# violin plot: Citations by Access Designation for each field
-
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~field)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-vplot
-ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-#further delving into the research fields
-#downloaded from InCites
-fields=read.csv(file="data/Incites Research Areas Report Updated.csv",header=T)
-#fields=fields[1:14,]
-
-fun <- function(x){
-  c(m=mean(x), v=var(x), n=length(x))
-}
-
-#use doBy and reshape2 packages to summarize data by Author Country of Origin
-rfs=summaryBy(clean_citations~field+OAlab, data=datum,FUN=fun)
-
-#reshape data to have mean citation count for each type of access
-rf_mean=dcast(rfs,field~OAlab,value.var="clean_citations.m")
-
-#tally total records per country
-rf_total=dcast(rfs,field~OAlab,value.var="clean_citations.n")
-rf_total$total_cit=rf_total$Bronze+rf_total$`Closed Access`+rf_total$Green+rf_total$`Other Gold`
-
-#merge citation count with mean citations
-rf_combined=cbind(rf_mean,rf_total[,2:6])
-colnames(rf_combined)=c("field","Bronze mean cit","Closed Access mean cit","Green mean cit","Other gold mean cit","Bronze total records","Closed Access total records","Green total records","Other Gold total records","total records")
-rf_combined$field[1]="Biochemistry"
-rf_merged=merge(rf_combined,fields,by.x="field",by.y="Name")
-
-#calculate difference in citations from open to closed
-rf_merged$bronze_cit_diff=ifelse(is.na(rf_merged$`Bronze total records`),NA,rf_merged$`Bronze mean cit`-rf_merged$`Closed Access mean cit`)
-rf_merged$green_cit_diff=ifelse(is.na(rf_merged$`Green total records`),NA,rf_merged$`Green mean cit`-rf_merged$`Closed Access mean cit`)
-rf_merged$gold_cit_diff=ifelse(is.na(rf_merged$`Other Gold total records`),NA,rf_merged$`Other gold mean cit`-rf_merged$`Closed Access mean cit`)
-rf_merged$cit_diff=ifelse(is.na(rf_merged$`total records`),NA,((rf_merged$`Other gold mean cit`+rf_merged$`Green mean cit`+rf_merged$`Bronze mean cit`)/3)-rf_merged$`Closed Access mean cit`)
-
-#plot cit diff versus field rank
-png(filename="outputs/plots/fieldRank_vs_cit_diff.png",width=8,height=8,res=300,pointsize=9,units="in")
-par(mfrow=c(2,2)) 
-plot(rf_merged$Rank,rf_merged$cit_diff,main="Research Field Rank vs. OA Cit Difference (Overall)",xlab="Research Field Rank",ylab="All OA vs CA citation # diff",pch=16)
-plot(rf_merged$Rank,rf_merged$bronze_cit_diff,main="Research Field Rank vs. Bronze OA Cit Difference",xlab="Research Field Rank",ylab="Bronze OA vs CA citation # diff",pch=16)
-plot(rf_merged$Rank,rf_merged$green_cit_diff,main="Research Field Rank vs. Green OA Cit Difference",xlab="Research Field Rank",ylab="Green OA vs CA citation # diff",pch=16)
-plot(rf_merged$Rank,rf_merged$gold_cit_diff,main="Research Field Rank vs. Other Gold OA Cit Difference",xlab="Research Field Rank",ylab="Other Gold OA vs CA citation # diff",pch=16)
-dev.off()
-
-# violin plot: Citations by Journal C Rank (JCR) quartile
-
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~JCR_quart)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_JCR_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-
-# violin plot: Citations by Year Published
-
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~year)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-# violin plot: Citations by Publisher
-
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~publisher)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-# violin plot: Citations by Corresponding Author Country of Origin
-#Not a meaningful plot - too much going on!
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~auth_loc)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-vplot
-#ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-
-
-fun <- function(x){
-  c(m=mean(x), v=var(x), n=length(x))
-}
-
-#use doBy and reshape2 packages to summarize data by Author Country of Origin
-als=summaryBy(norm_cit~auth_loc+OAlab, data=datum,FUN=fun)
-
-#reshape data to have column for each type of access
-a_coo=dcast(als,auth_loc~OAlab,value.var="norm_cit.m")
-
-#tally total records per country
-a_coo2=dcast(als,auth_loc~OAlab,value.var="norm_cit.n")
-a_coo2$total_cit=a_coo2$Bronze+a_coo2$`Closed Access`+a_coo2$Green+a_coo2$`Other Gold`
-
-#merge citation count with mean citations
-a_coo_merged=cbind(a_coo,a_coo2[,2:6])
-colnames(a_coo_merged)=c("auth_loc","Bronze mean cit","Closed Access mean cit","Green mean cit","Other gold mean cit","Bronze total records","Closed Access total records","Green total records","Other Gold total records","total records")
-
-#calculate difference in citations from open to closed
-a_coo_merged$bronze_cit_diff=ifelse(is.na(a_coo_merged$`Bronze total records`),NA,a_coo_merged$`Bronze mean cit`-a_coo_merged$`Closed Access mean cit`)
-a_coo_merged$green_cit_diff=ifelse(is.na(a_coo_merged$`Green total records`),NA,a_coo_merged$`Green mean cit`-a_coo_merged$`Closed Access mean cit`)
-a_coo_merged$gold_cit_diff=ifelse(is.na(a_coo_merged$`Other Gold total records`),NA,a_coo_merged$`Other gold mean cit`-a_coo_merged$`Closed Access mean cit`)
-a_coo_merged$cit_diff=ifelse(is.na(a_coo_merged$`total records`),NA,((a_coo_merged$`Other gold mean cit`+a_coo_merged$`Green mean cit`+a_coo_merged$`Bronze mean cit`)/3)-a_coo_merged$`Closed Access mean cit`)
-
-
-#summarize # citations increase due to Open Access
-hist(a_coo_merged$cit_diff,main="Difference in citation count due to Open Access",xlab="Difference")
-summary(a_coo_merged$cit_diff)
-
-#note: would love to make a map with these values presented as a heat map!
-data(wrld_simpl)
-brks=round(quantile(a_coo_merged$cit_diff,na.rm=T),2)
-a_coo_merged$cd_quant=cut(a_coo_merged$cit_diff,breaks=brks,labels=F,include.lowest=T)
-colours=rev(c("#cb181d","#fb6a4a","#fcae91","#fee5d9"))
-a_coo_merged$colors=as.character(cut(a_coo_merged$cit_diff,breaks=brks,labels=colours,include.lowest=T))
-
-#remove NAs
-a_coo_merged=subset(a_coo_merged,!is.na(a_coo_merged$colors))
-
-myCountries = wrld_simpl@data$NAME %in% a_coo_merged$auth_loc
-test=data.frame(myCountries,wrld_simpl@data$NAME)
-new_col=vector(length = length(wrld_simpl@data$NAME))
-#get color list
-for (g in 1:length(wrld_simpl@data$NAME)) {
-new_col[g]=ifelse(test$myCountries[g]==TRUE,a_coo_merged$colors[a_coo_merged$auth_loc==test$wrld_simpl.data.NAME[[g]]],"#FFFFFF")
-  }
-test$color=new_col
-
-png(filename="outputs/plots/clean_map_Auth_Loc_Cit_Diff.png",res=300,pointsize=7,width=8,height=6,units="in")
-plot(wrld_simpl, col = test$color)
-legend(x=c(-185.8, 7.1), y=c(13, 14.5), legend=leglabs(brks),
-       fill=(colours), bty="n",cex=1.5)
-dev.off()
 
 
 #### ARCHIVED MODEL BUILDING ####
