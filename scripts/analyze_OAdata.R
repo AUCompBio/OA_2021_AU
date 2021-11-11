@@ -178,21 +178,25 @@ datum <- datum %>%
   #                                  - Rescale variables?
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+(1|field/jour)+(1|year), 
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
 
-### Remove random effects to evaluate warnings
-mod2.2a <- glm(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+mod2.2.1 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
-### Compare to negative binomial model
-mod2.2c <- glm.nb(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
-               data = datum)
-### Changed y variable to explore outliers
-mod2.2b <- glm(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
-                      data = datum, family = poisson(link = "log"))
-### Compare to negative binomial model
-mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
-                  data = datum)
+#Uses raw Citations; takes out GNI_class. 
+
+# ### Remove random effects to evaluate warnings
+# mod2.2a <- glm(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+#                 data = datum, family = poisson(link = "log"))
+# ### Compare to negative binomial model
+# mod2.2c <- glm.nb(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+#                data = datum)
+# ### Changed y variable to explore outliers
+# mod2.2b <- glm(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+#                       data = datum, family = poisson(link = "log"))
+# ### Compare to negative binomial model
+# mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+#                   data = datum)
 
 # Putting model coefficients into a dataframe
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
