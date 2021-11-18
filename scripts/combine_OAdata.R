@@ -113,8 +113,8 @@ datum <- datum %>%
 
 ##### 3a. create new col(s) with univariate outliers corrected##### 
 #approach to apply threshold to high citation values - citation count is correlated with year
-mod=lm(datum$citations~datum$year)
-
+#mod=lm(datum$citations~datum$year)
+#full model for cook's
 #get model plot for supplement
 plot(mod) #save first plot to PDF. Current name: "Residuals vs Leverage Plot with Cook's Distance"
 
@@ -135,12 +135,12 @@ cutoff_2017=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD 
                         (datum$year==2017),]$citations) #year is 2017
 cutoff_2018=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
                         (datum$year==2018),]$citations) #year is 2018
-datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013,
-               ifelse(datum$year==2014 & datum$citations>cutoff_2014,cutoff_2014,
-               ifelse(datum$year==2015 & datum$citations>cutoff_2015,cutoff_2015,
-               ifelse(datum$year==2016 & datum$citations>cutoff_2016,cutoff_2016,
-               ifelse(datum$year==2017 & datum$citations>cutoff_2017,cutoff_2017,
-               ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
+#datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013,
+#              ifelse(datum$year==2014 & datum$citations>cutoff_2014,cutoff_2014,
+#               ifelse(datum$year==2015 & datum$citations>cutoff_2015,cutoff_2015,
+#               ifelse(datum$year==2016 & datum$citations>cutoff_2016,cutoff_2016,
+#               ifelse(datum$year==2017 & datum$citations>cutoff_2017,cutoff_2017,
+#               ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
 
 #repeat to apply a lower limit
 cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
@@ -182,7 +182,7 @@ cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD 
 #   but less conservative way to filter, but for now we will use original cut-off of 5
 
 # exclude rows with less than 10 citations
-datum <- datum %>% filter(citations > 9)
+# datum <- datum %>% filter(citations > 9)
   # this excludes 55,952 records
 #datumkept5 <- datum %>%  filter(citations > 4)
   # this excludes 25,701 records 
@@ -281,8 +281,9 @@ datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
 
 # 4. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,norm_cit,Volume,
+                          year, auth_loc, auth_count,Volume,
                           Issue, gni_class)
+# removed norm_cit from column selection, wanted dataset without truncating or fencing values
 
 # 5a. adding metadata
 md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
