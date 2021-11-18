@@ -178,7 +178,10 @@ datum <- datum %>%
   #                                  - Rescale variables?
   # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+year+(1|field/jour), 
+#mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+year+(1|field/jour), 
+#                data = datum, family = poisson(link = "log"))
+
+mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
 
 mod2.2.1 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
@@ -202,13 +205,6 @@ mod2.2.1 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_sca
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
 # Adding column with interpretable betas
 Mod2.2 <- Mod2.2 %>% mutate(Exp_Estim =exp(Estimate))
-
-## interaction with gni_class & access level
-mod2.3 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*gni_class+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
-                data = datum, family = poisson(link = "log"))
-
-Mod2.3 <- as.data.frame(coef(summary(mod2.3)))
-Mod2.3 <- Mod2.3 %>% mutate(Exp_Estim =exp(Estimate))
 
 # Previous message (before 8/30/21)
 #Warning messages:
@@ -289,6 +285,12 @@ sink()  # returns output to the console
 #                data = datum, family = poisson(link = "log"))
 #summary(mod2.6)
 #  # basic model of all factors (numerical factors scaled) plus interaction of auth_count and APC, with a random effect of journal nested in field
+## interaction with gni_class & access level
+#mod2.7 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")*gni_class+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
+#                data = datum, family = poisson(link = "log"))
+
+#Mod2.7 <- as.data.frame(coef(summary(mod2.3)))
+#Mod2.7 <- Mod2.3 %>% mutate(Exp_Estim =exp(Estimate))
 #
 ## Tried starting the model from where it failed to converge
 #ss <- getME(mod2.5,c("theta","fixef"))
@@ -318,7 +320,7 @@ sink()  # returns output to the console
 #mean(datum$norm_cit_log)
 #var(datum$norm_cit_log)
 
-### mean calculations
+#### mean calculations
 # grand mean of norm_cit
 #mean(datum$norm_cit)
 # means for norm_cit across levels of categorical variables
@@ -337,7 +339,7 @@ sink()  # returns output to the console
 #mean of year when all other categories are reference values
 #mean(m2var[,"High", "Closed Access", 1])
 
-#####
+##### coding contrasts
 # Recode year field (deviation- compares level to grand mean)
 #contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
