@@ -151,41 +151,15 @@ datum <- datum %>%
 #datum$AIS_scaled <- scale(datum$AIS)
 # this makes a matrix inside of our dataframe
 
-##### Models that didn't converge :( #####
-# Poisson regression using norm_cit as response
-  # basic model of all factors, with a random effect of journal nested in field
-#mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
-#                  (1|field/jour), 
-#              data = datum, family = poisson(link = "log"))
-#summary(mod2.1)
-#Anova(mod2.1)
-# Previous Warning (before 8/30/21)
-#Warning messages:
-  #  1: Some predictor variables are on very different scales: consider rescaling 
-  #  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                  Model failed to converge with max|grad| = 0.0449433 (tol = 0.002, component 1)
-  #                3: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                                  Model is nearly unidentifiable: very large eigenvalue
-  #                                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-  #                                - Rescale variables?
-# Warning message as of 8/30/21
-#Warning messages:
-  #  1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                    Model failed to converge with max|grad| = 0.0166963 (tol = 0.002, component 1)
-  #                  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
-  #                                    Model is nearly unidentifiable: very large eigenvalue
-  #                                  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
-  #                                  - Rescale variables?
-  # basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
 
-#mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+year+(1|field/jour), 
-#                data = datum, family = poisson(link = "log"))
 
 mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
 
-mod2.2.1 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
-                data = datum, family = poisson(link = "log"))
+
+
+mod2.2.1 <- glmer.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
+                data = datum)
 #Uses raw Citations; takes out GNI_class. 
 
 # ### Remove random effects to evaluate warnings
@@ -343,3 +317,33 @@ sink()  # returns output to the console
 # Recode year field (deviation- compares level to grand mean)
 #contrasts(datum$year) = contr.sum(6)
 # contrasts(datum$field) = contr.sum(12) no longer relevant with field as random effect
+
+##### Models that didn't converge :( #####
+# Poisson regression using norm_cit as response
+# basic model of all factors, with a random effect of journal nested in field
+#mod2.1 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count+JCR_quart+AIS+year+gni_class+
+#                  (1|field/jour), 
+#              data = datum, family = poisson(link = "log"))
+#summary(mod2.1)
+#Anova(mod2.1)
+# Previous Warning (before 8/30/21)
+#Warning messages:
+#  1: Some predictor variables are on very different scales: consider rescaling 
+#  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                  Model failed to converge with max|grad| = 0.0449433 (tol = 0.002, component 1)
+#                3: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                                  Model is nearly unidentifiable: very large eigenvalue
+#                                - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#                                - Rescale variables?
+# Warning message as of 8/30/21
+#Warning messages:
+#  1: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                    Model failed to converge with max|grad| = 0.0166963 (tol = 0.002, component 1)
+#                  2: In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+#                                    Model is nearly unidentifiable: very large eigenvalue
+#                                  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+#                                  - Rescale variables?
+# basic model of all factors (numerical factors scaled), with a random effect of journal nested in field
+
+#mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+gni_class+year+(1|field/jour), 
+#                data = datum, family = poisson(link = "log"))
