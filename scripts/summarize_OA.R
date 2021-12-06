@@ -30,6 +30,55 @@ library(performance)
 #install.packages("stargazer")
 library(stargazer) # stargazer does not like tibbles
 
+### COPIED FROM "combine_OAdata.R" ###
+# 6. Make data tables
+t1=datum[,c("year","jour","field","norm_cit","OAlab")]
+t1$jour=as.factor(t1$jour)
+
+#make dummy column to count articles
+t1$art=1
+
+#use art column to get sum of articles by field/journal
+num.art=summaryBy(art~field+jour,data=t1,FUN=c(mean,sum))
+colnames(num.art)=c("field","jour","jour_count","Number articles")
+
+#further summarize by field to get journal count and article count by field
+num.jour=summaryBy(jour_count+`Number articles`~field,data=num.art,FUN=c(sum))
+
+#add a column for the matched data
+t1m=matched[,c("year","jour","field","norm_cit","OAlab")] #need to edit this since the name of matched data has changed!
+t1m$jour=as.factor(t1m$jour)
+t1m$art=1
+num.art3=summaryBy(art~field+jour,data=t1m,FUN=c(mean,sum))
+colnames(num.art3)=c("field","jour","jour_count","Number articles")
+num.jour2=summaryBy(jour_count+`Number articles`~field,data=num.art3,FUN=c(sum))
+
+#remove NA field (need to fix later!)
+#num.jour2=num.jour2[complete.cases(num.jour2),]
+table1=cbind(num.jour,num.jour2$`Number articles.sum`)
+
+#get mean cit per access type
+num.art2=dcast(t1,field~OAlab,value.var="art",fun.aggregate = length)
+
+table1=cbind(table1,num.art2[,2:5])
+
+#add col names
+colnames(table1)=c("Research Area","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
+
+#fix field names
+table1$`Research Area`=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
+                         "Marine & Freshwater Biology","Microbiology","Mycology","Neurosciences & Neurology","Oncology",         
+                         "Plant Sciences","Zoology")
+
+#make row for totals and grand means
+totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(sum(table1$`Number of Matched Articles`),0),sum(table1$Bronze),sum(table1$`Closed Access`),sum(table1$Green),sum(table1$`Other Gold`))
+
+#rbind totals to table1
+table1_new=rbind(table1,totals)
+
+#output table
+write.csv(table1_new,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F)
+
 
 
 ### COPIED FROM "analyze_OAdata.R" ###
