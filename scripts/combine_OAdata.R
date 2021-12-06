@@ -21,6 +21,8 @@ library(maptools)
 library(doBy)
 #install.packages('reshape2')
 library(reshape2)
+#install.packages('stargazer')
+library(stargazer)
 
 # list/save dir names in curr dir
 dirnames = paste0("data/raw/", list.files(path = "data/raw/"))
@@ -111,56 +113,133 @@ datum <- datum %>%
                 pattern = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMIC AND ENVIRONMENTAL PHYSIOLOGY",
                 replacement = "JOURNAL OF COMPARATIVE PHYSIOLOGY B-BIOCHEMICAL SYSTEMS AND ENVIRONMENTAL PHYSIOLOGY"))
 
-##### 3a. create new col(s) with univariate outliers corrected##### 
+##### 3a. create new col from OA designations (ie OA, Closed, Other)
+datum$OAdes = replace_na(datum$OAdes, "")
+datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
+                     'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
+                                          ifelse(grepl('Green', datum$OAdes), 'Green',
+                                                 ifelse(grepl('^$', datum$OAdes), 'Closed Access', 'Error'))))
+# 3b. create new col from authors with count
+datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
+
+# 4a. adding metadata
+md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
+# exclude empty fields; remove the $ from APC
+md <- md %>% dplyr::select(!(starts_with("X")))
+md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
+
+# 4b. joining metadata with clean data
+datum <- left_join(datum, md, by = "jour")
+# Removing Cell Bio field, because we removed cell bio journals
+#datum <-datum %>% filter(field != "CellBio")
+
+# 4c. converting APC to categorical variable
+apc_data=read.csv(file="data/PublisherAPCs_combined.csv")
+summary(apc_data$USD.cleaned)
+#median is 3000
+length(apc_data$Journal)
+#5826 journals
+hist(apc_data$USD.cleaned,xlab="Dollars", main="APC across publishers in USD")
+#add abline for potential cutoffs
+abline(v=3000, col="blue")
+abline(v=3490, col="red")
+
+#apply classification (need to add a label for green to be free)
+datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(datum$APC<=3490 & datum$OAlab=="Other Gold","lowAPC","noAPC"))
+
+# 5. select desired cols
+datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
+                                 year, auth_count,Volume,
+                                 Issue, apc_cat)
+
+# 6. Generating a matched dataset for Other Gold vs Green  
+#Initializing empty list
+matchlist <- list()
+# Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
+jnames <- unique(datum$jour)
+# Apply splitbyjournal and subsequent matchbytibble functions
+sapply(jnames, splitbyjournal)
+# Convert list of lists to data.frame
+matched <- as.data.frame(rbindlist(matchlist))
+# Filtering for records that have "Gold or Green" in the OAdes label
+matched <- matched %>% filter(str_detect(OAdes, "Gold|Green")) %>% #45616 records that include other gold or green designations
+  # Filtering out records that are both Other Gold and Green 
+  filter(!str_detect(OAdes, ", Other|Gold,")) %>% # removed 16120 that have both other gold and green designations
+  # Filtering out records that have any bronze designations
+  filter(!str_detect(OAdes, "Bronze")) # removed 23204 that have bronze designations
+
+# How did this effected representation across journals?
+matched %>% count(jour,OAlab)
+
+
+# results into object
+jbam <- matched %>% count(jour,OAlab)
+
+# Pander output is also nice...best for txt
+sink("outputs/tables/jourbyaccess_matched.txt")
+pander(jbam)
+sink()
+
+# also nice, looks MD formatted already
+knitr::kable(jbam)
+
+
+# 7. Write final files
+write_csv(datum, file = "data/OA_data_fin.csv")
+write_csv(matched, file = "data/matched_OA_data_fin.csv")
+
+
+###### ARCHIVED CODE ######
+#3a. create new col(s) with univariate outliers corrected#
 #approach to apply threshold to high citation values - citation count is correlated with year
 #mod=lm(datum$citations~datum$year)
 #full model for cook's
 #get model plot for supplement
-plot(mod) #save first plot to PDF. Current name: "Residuals vs Leverage Plot with Cook's Distance"
+#plot(mod) #save first plot to PDF. Current name: "Residuals vs Leverage Plot with Cook's Distance"
 
 # calculate cooks d for all data
-datum$cooksd <- cooks.distance(mod)
-#get linear fit of all values
-datum$fitted=mod$coefficients[2]*datum$year+mod$coefficients[1]
-#get upper limit of citation count
-cutoff_2013=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2013),]$citations) #year is 2013
-cutoff_2014=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2014),]$citations) #year is 2014
-cutoff_2015=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2015),]$citations) #year is 2015
-cutoff_2016=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2016),]$citations) #year is 2016
-cutoff_2017=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2017),]$citations) #year is 2017
-cutoff_2018=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
-                        (datum$year==2018),]$citations) #year is 2018
-#datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013,
-#              ifelse(datum$year==2014 & datum$citations>cutoff_2014,cutoff_2014,
-#               ifelse(datum$year==2015 & datum$citations>cutoff_2015,cutoff_2015,
-#               ifelse(datum$year==2016 & datum$citations>cutoff_2016,cutoff_2016,
-#               ifelse(datum$year==2017 & datum$citations>cutoff_2017,cutoff_2017,
-#               ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
-
-#repeat to apply a lower limit
-cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2013) & #year is 2013
-                        (datum$citations < datum$fitted),]$citations)
-cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2014) & #year is 2014
-                    (datum$citations < datum$fitted),]$citations)
-cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2015) & #year is 2015
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2016) & #year is 2016
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2017) & #year is 2017
-  (datum$citations < datum$fitted),]$citations)
-cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
-                        (datum$year==2018) & #year is 2018
-  (datum$citations < datum$fitted),]$citations)
+#datum$cooksd <- cooks.distance(mod)
+##get linear fit of all values
+#datum$fitted=mod$coefficients[2]*datum$year+mod$coefficients[1]
+##get upper limit of citation count
+#cutoff_2013=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2013),]$citations) #year is 2013
+#cutoff_2014=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2014),]$citations) #year is 2014
+#cutoff_2015=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2015),]$citations) #year is 2015
+#cutoff_2016=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2016),]$citations) #year is 2016
+#cutoff_2017=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2017),]$citations) #year is 2017
+#cutoff_2018=min(datum[(datum$cooksd >=3*mean(datum$cooksd, na.rm=T)) & # cooksD is high
+#                        (datum$year==2018),]$citations) #year is 2018
+##datum$norm_cit=ifelse(datum$year==2013 & datum$citations>cutoff_2013,cutoff_2013,
+##              ifelse(datum$year==2014 & datum$citations>cutoff_2014,cutoff_2014,
+##               ifelse(datum$year==2015 & datum$citations>cutoff_2015,cutoff_2015,
+##               ifelse(datum$year==2016 & datum$citations>cutoff_2016,cutoff_2016,
+##               ifelse(datum$year==2017 & datum$citations>cutoff_2017,cutoff_2017,
+##               ifelse(datum$year==2018 & datum$citations>cutoff_2018,cutoff_2018,datum$citations))))))
+#
+##repeat to apply a lower limit
+#cutoff_2013=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2013) & #year is 2013
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2014=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2014) & #year is 2014
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2015=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2015) & #year is 2015
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2016=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2016) & #year is 2016
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2017=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2017) & #year is 2017
+#                        (datum$citations < datum$fitted),]$citations)
+#cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD is low
+#                        (datum$year==2018) & #year is 2018
+#                        (datum$citations < datum$fitted),]$citations)
 # this code sets all lower citation limits to the lower cutoff from cooks d. 
 #datum$norm_cit=ifelse(datum$year==2013 & datum$citations<cutoff_2013,cutoff_2013,
 #               ifelse(datum$year==2014 & datum$citations<cutoff_2014,cutoff_2014,
@@ -176,93 +255,83 @@ cutoff_2018=max(datum[(datum$cooksd <=3*mean(datum$cooksd, na.rm=T)) & # cooksD 
 #                          datum$year == 2016 & datum$citations < cutoff_2016|
 #                          datum$year == 2017 & datum$citations < cutoff_2017|
 #                          datum$year == 2018 & datum$citations < cutoff_2018))
- # filtering this way results in the loss of 96,635 records
+# filtering this way results in the loss of 96,635 records
 # TM & AC, cut-off values are way too conservative and we are losing valuable data at the
 #   lower end of the threshold. We can consult with Todd S. for a less arbitrary 
 #   but less conservative way to filter, but for now we will use original cut-off of 5
 
 # exclude rows with less than 10 citations
 # datum <- datum %>% filter(citations > 9)
-  # this excludes 55,952 records
+# this excludes 55,952 records
 #datumkept5 <- datum %>%  filter(citations > 4)
-  # this excludes 25,701 records 
+# this excludes 25,701 records 
 #datum <- datum %>% filter(citations > 4)
 
 # Log-transform norm_cit for use in linear models. Add 1 first to avoid infinite values
 #datum$norm_cit_log <- log(datum$norm_cit + 1)
-
-# 3b. create new col from OA designations (ie OA, Closed, Other)
-datum$OAdes = replace_na(datum$OAdes, "")
-datum$OAlab = ifelse(grepl('Gold', datum$OAdes), 
-                     'Other Gold', ifelse(grepl('Bronze', datum$OAdes), 'Bronze',
-                                          ifelse(grepl('Green', datum$OAdes), 'Green',
-                                                 ifelse(grepl('^$', datum$OAdes), 'Closed Access', 'Error'))))
-# 3c. create new col from authors with count
-datum <- datum %>% add_column(auth_count = str_count(datum$Authors, ";") + 1)
-
 # 3d. create new col from reprint addresses with author country
-datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
-#read in GNI data to match with corresponding author countries
-gni=read.csv(file="data/GNI.Percapita_reduced.csv",header=T,stringsAsFactors = T)
-#read in map data
-data("wrld_simpl")
-#make two column data frame with country names and 3 letter codes
-countries=data.frame(wrld_simpl@data$NAME,wrld_simpl@data$ISO3)
-#test out code to extract multiple countries for one pub (use max value 19 as test)
-#test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
-auth_loc=vector(length = length(datum$corrAuth_loc))
-corrAuth_code=vector(length = length(datum$corrAuth_loc))
-corrAuth_gni=vector(length = length(datum$corrAuth_loc))
-
-for (t in 1:length(datum$corrAuth_loc)) {
-
-  test2=unlist(strsplit(as.character(datum$corrAuth_loc[t]), ";"))
-  test3=vector(length=length(test2))
-  
-  for (i in 1:length(test2)) {
-    test3[i]=ifelse(str_detect(test2[i],"corresponding author"),ifelse(str_detect(test2[i],"USA"),str_remove(word(test2[i], -1),"[.]"),str_remove(gsub(".*,","",test2[i]),"[.]")),NA)
-    test3[i]=str_trim(test3[i], side = "left")
-    }
-  #get unique non-NA values
-  test4=unique(sort(na.omit(test3)))
-  #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
-  #auth_loc[t]=ifelse(length(test4)==1,test4,NA)
-  coun_codes=vector(length=length(test4))
-  max_gni=vector(length=length(test4))
-  for (u in 1:length(test4)) {
-    #ugly ifelse nest to rename countries
-    test4[u]=ifelse(test4[u]=='Republic','Czech Republic',ifelse(test4[u]=='Zealand','New Zealand',
-    ifelse(test4[u]=='USA','United States',ifelse(test4[u]=='DEM REP CONGO','Congo',
-    ifelse(test4[u]=='BELARUS','Belarus',ifelse(test4[u]=='Rep Congo','Congo',ifelse(test4[u]=='Vietnam','Viet Nam',
-    ifelse(test4[u]=='Wales','United Kingdom',ifelse(test4[u]=='U Arab Emirates','United Arab Emirates',
-    ifelse(test4[u]=='Turks & Caicos','Turks and Caicos Islands',ifelse(test4[u]=='Trinidad Tobago','Trinidad and Tobago',
-    ifelse(test4[u]=='Tanzania','United Republic of Tanzania',ifelse(test4[u]=='Syria','Syrian Arab Republic',
-    ifelse(test4[u]=='St Vincent','Saint Vincent and the Grenadines',ifelse(test4[u]=='St Kitts & Nevi','Saint Kitts and Nevis',
-    ifelse(test4[u]=='Scotland','United Kingdom',ifelse(test4[u]=='Arabia','Saudi Arabia',ifelse(test4[u]=='Myanmar','Burma',
-    ifelse(test4[u]=='Laos','Lao People\'s Democratic Republic',ifelse(test4[u]=='Libya','Libyan Arab Jamahiriya',
-    ifelse(test4[u]=='Peoples R China','China',ifelse(test4[u]=='England','United Kingdom',
-    ifelse(test4[u]=='Papua N Guinea','Papua New Guinea',ifelse(test4[u]=='Ascension Isl','United Kingdom',
-    ifelse(test4[u]=='Bonaire','Netherlands',ifelse(test4[u]=='Bosnia & Herceg','Bosnia and Herzegovina',
-    ifelse(test4[u]=='Brunei','Brunei Darussalam',ifelse(test4[u]=='Emirates','United Arab Emirates',
-    ifelse(test4[u]=='South Korea','Korea, Republic of',ifelse(test4[u]=='Rica','Costa Rica',
-    ifelse(test4[u]=='Macedonia','The former Yugoslav Republic of Macedonia',
-    ifelse(test4[u]=='North Macedonia','The former Yugoslav Republic of Macedonia',
-    ifelse(test4[u]=='North Ireland','United Kingdom',ifelse(test4[u]=='Moldova','Republic of Moldova',
-    ifelse(test4[u]=='Kosovo','Serbia',ifelse(test4[u]=='Korea','Korea, Republic of',
-    ifelse(test4[u]=='Iran','Iran (Islamic Republic of)',ifelse(test4[u]=='Guinea Bissau','Guinea-Bissau',
-    ifelse(test4[u]=='Falkland Island','Falkland Islands (Malvinas)',ifelse(test4[u]=='Eswatini','Swaziland',
-    ifelse(test4[u]=='Curacao','Netherlands Antilles',ifelse(test4[u]=='Cote Ivoire','Cote d\'Ivoire',
-    ifelse(test4[u]=='Cent Afr Republ','Central African Republic',ifelse(test4[u]=='Africa','South Africa',test4[u]))))))))))))))))))))))))))))))))))))))))))))
-    
-    test5=ifelse(length(as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))==0,NA,as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))
-
-    coun_codes[u]=test5
-    max_gni[u]=ifelse(length(gni$AVG_2013.2018[gni$Country.Code==test5])==0,NA,gni$AVG_2013.2018[gni$Country.Code==test5])
-  }
-  corrAuth_gni[t]=ifelse(all(is.na(max_gni)),NA,ifelse(length(max_gni)==1,max_gni,max(max_gni,na.rm=T)))
-  corrAuth_code[t]=ifelse(is.na(corrAuth_gni[t]),coun_codes[1],ifelse(length(coun_codes)==1,coun_codes,coun_codes[which(max_gni==corrAuth_gni[t])[[1]]]))
-  auth_loc[t]=ifelse(is.na(corrAuth_gni[t]),test4[1],ifelse(length(test4)==1,test4,test4[which(max_gni==corrAuth_gni[t])[[1]]]))
-}
+#datum <- datum %>% add_column(corr_auth_count = str_count(datum$corrAuth_loc, ";") + 1)
+##read in GNI data to match with corresponding author countries
+#gni=read.csv(file="data/GNI.Percapita_reduced.csv",header=T,stringsAsFactors = T)
+##read in map data
+#data("wrld_simpl")
+##make two column data frame with country names and 3 letter codes
+#countries=data.frame(wrld_simpl@data$NAME,wrld_simpl@data$ISO3)
+##test out code to extract multiple countries for one pub (use max value 19 as test)
+##test=datum[datum$corr_auth_count>=17 & !is.na(datum$corr_auth_count),c("corrAuth_loc")]
+#auth_loc=vector(length = length(datum$corrAuth_loc))
+#corrAuth_code=vector(length = length(datum$corrAuth_loc))
+#corrAuth_gni=vector(length = length(datum$corrAuth_loc))
+#
+#for (t in 1:length(datum$corrAuth_loc)) {
+#  
+#  test2=unlist(strsplit(as.character(datum$corrAuth_loc[t]), ";"))
+#  test3=vector(length=length(test2))
+#  
+#  for (i in 1:length(test2)) {
+#    test3[i]=ifelse(str_detect(test2[i],"corresponding author"),ifelse(str_detect(test2[i],"USA"),str_remove(word(test2[i], -1),"[.]"),str_remove(gsub(".*,","",test2[i]),"[.]")),NA)
+#    test3[i]=str_trim(test3[i], side = "left")
+#  }
+#  #get unique non-NA values
+#  test4=unique(sort(na.omit(test3)))
+#  #add in code to calculate GNI for corresponding author country (use max GNI for country and value)
+#  #auth_loc[t]=ifelse(length(test4)==1,test4,NA)
+#  coun_codes=vector(length=length(test4))
+#  max_gni=vector(length=length(test4))
+#  for (u in 1:length(test4)) {
+#    #ugly ifelse nest to rename countries
+#    test4[u]=ifelse(test4[u]=='Republic','Czech Republic',ifelse(test4[u]=='Zealand','New Zealand',
+#                                                                 ifelse(test4[u]=='USA','United States',ifelse(test4[u]=='DEM REP CONGO','Congo',
+#                                                                                                               ifelse(test4[u]=='BELARUS','Belarus',ifelse(test4[u]=='Rep Congo','Congo',ifelse(test4[u]=='Vietnam','Viet Nam',
+#                                                                                                                                                                                                ifelse(test4[u]=='Wales','United Kingdom',ifelse(test4[u]=='U Arab Emirates','United Arab Emirates',
+#                                                                                                                                                                                                                                                 ifelse(test4[u]=='Turks & Caicos','Turks and Caicos Islands',ifelse(test4[u]=='Trinidad Tobago','Trinidad and Tobago',
+#                                                                                                                                                                                                                                                                                                                     ifelse(test4[u]=='Tanzania','United Republic of Tanzania',ifelse(test4[u]=='Syria','Syrian Arab Republic',
+#                                                                                                                                                                                                                                                                                                                                                                                      ifelse(test4[u]=='St Vincent','Saint Vincent and the Grenadines',ifelse(test4[u]=='St Kitts & Nevi','Saint Kitts and Nevis',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                              ifelse(test4[u]=='Scotland','United Kingdom',ifelse(test4[u]=='Arabia','Saudi Arabia',ifelse(test4[u]=='Myanmar','Burma',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ifelse(test4[u]=='Laos','Lao People\'s Democratic Republic',ifelse(test4[u]=='Libya','Libyan Arab Jamahiriya',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ifelse(test4[u]=='Peoples R China','China',ifelse(test4[u]=='England','United Kingdom',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ifelse(test4[u]=='Papua N Guinea','Papua New Guinea',ifelse(test4[u]=='Ascension Isl','United Kingdom',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ifelse(test4[u]=='Bonaire','Netherlands',ifelse(test4[u]=='Bosnia & Herceg','Bosnia and Herzegovina',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ifelse(test4[u]=='Brunei','Brunei Darussalam',ifelse(test4[u]=='Emirates','United Arab Emirates',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ifelse(test4[u]=='South Korea','Korea, Republic of',ifelse(test4[u]=='Rica','Costa Rica',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ifelse(test4[u]=='Macedonia','The former Yugoslav Republic of Macedonia',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ifelse(test4[u]=='North Macedonia','The former Yugoslav Republic of Macedonia',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ifelse(test4[u]=='North Ireland','United Kingdom',ifelse(test4[u]=='Moldova','Republic of Moldova',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ifelse(test4[u]=='Kosovo','Serbia',ifelse(test4[u]=='Korea','Korea, Republic of',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ifelse(test4[u]=='Iran','Iran (Islamic Republic of)',ifelse(test4[u]=='Guinea Bissau','Guinea-Bissau',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ifelse(test4[u]=='Falkland Island','Falkland Islands (Malvinas)',ifelse(test4[u]=='Eswatini','Swaziland',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ifelse(test4[u]=='Curacao','Netherlands Antilles',ifelse(test4[u]=='Cote Ivoire','Cote d\'Ivoire',
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ifelse(test4[u]=='Cent Afr Republ','Central African Republic',ifelse(test4[u]=='Africa','South Africa',test4[u]))))))))))))))))))))))))))))))))))))))))))))
+#    
+#    test5=ifelse(length(as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))==0,NA,as.character(countries$wrld_simpl.data.ISO3[countries$wrld_simpl.data.NAME==test4[u]]))
+#    
+#    coun_codes[u]=test5
+#    max_gni[u]=ifelse(length(gni$AVG_2013.2018[gni$Country.Code==test5])==0,NA,gni$AVG_2013.2018[gni$Country.Code==test5])
+#  }
+#  corrAuth_gni[t]=ifelse(all(is.na(max_gni)),NA,ifelse(length(max_gni)==1,max_gni,max(max_gni,na.rm=T)))
+#  corrAuth_code[t]=ifelse(is.na(corrAuth_gni[t]),coun_codes[1],ifelse(length(coun_codes)==1,coun_codes,coun_codes[which(max_gni==corrAuth_gni[t])[[1]]]))
+#  auth_loc[t]=ifelse(is.na(corrAuth_gni[t]),test4[1],ifelse(length(test4)==1,test4,test4[which(max_gni==corrAuth_gni[t])[[1]]]))
+#}
 
 #three new columns to datum
 datum$auth_loc=auth_loc
@@ -278,73 +347,21 @@ myCountries[CountryIntersect==FALSE]
 
 #3e Adding classification of low or high income
 datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
-
-# 4. select desired cols
-datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
-                          year, auth_loc, auth_count,Volume,
-                          Issue, gni_class)
-# removed norm_cit from column selection, wanted dataset without truncating or fencing values
-
-# 5a. adding metadata
-md <- read_csv("data/oa_metadata.csv", col_names = TRUE)
-# exclude empty fields; remove the $ from APC
-md <- md %>% dplyr::select(!(starts_with("X")))
-md$APC <- as.numeric(gsub("[\\$,]", "", md$APC))
-
-# 5b. joining metadata with clean data
-datum <- left_join(datum, md, by = "jour")
-# Removing Cell Bio field, because we removed cell bio journals
-#datum <-datum %>% filter(field != "CellBio")
-
-# 5b+. converting APC to categorical variable
-apc_data=read.csv(file="data/PublisherAPCs_combined.csv")
-summary(apc_data$USD.cleaned)
-#median is 3000
-length(apc_data$Journal)
-#5826 journals
-hist(apc_data$USD.cleaned,xlab="Dollars", main="APC across publishers in USD")
-#add abline for potential cutoffs
-abline(v=3000, col="blue")
-abline(v=3490, col="red")
-
-#apply classification (need to add a label for green to be free)
-datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(datum$APC<=3490 & datum$OAlab=="Other Gold","lowAPC","noAPC"))
-
-#qc:
-length(datum$apc_cat[datum$apc_cat=="hiAPC"])
-#9484 records are hiAPC
-length(datum$apc_cat[datum$apc_cat=="lowAPC"])
-#3834 records are lowAPC
-length(datum$apc_cat[datum$apc_cat=="noAPC"])
-#76679 records are noAPC
-#last number should match number not labeled as Other Gold
-length(datum$OAlab[datum$OAlab!="Other Gold"])
-#76679 records are labeled as NOT other gold
-
-# 5c. Generating a matched dataset for Other Gold vs Closed
-  #Initializing empty list
-matchlist <- list()
-  # Getting Journal Names. Concatenation of the csv's converted from the download xls files leaves a part of the header as a field. This is why I am excluding the last line.
-jnames <- unique(datum$jour)
-# Apply splitbyjournal and subsequent matchbytibble functions
-sapply(jnames, splitbyjournal)
-# Convert list of lists to data.frame
-matched <- as.data.frame(rbindlist(matchlist))
-
+## Matching for Green and closed vol/iss combo
 # Redefining function for Green access 
 ## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
 #splitbyjournal <- function(journal) {
-  # OA designation patterns needed to match; using grep so regex should work 
+# OA designation patterns needed to match; using grep so regex should work 
 #  patt <- c("^$", "Green")
-  # subset single journal in dataset
+# subset single journal in dataset
 #  sjournal <- datum %>% filter(jour == journal)
-  # Filtering for target OA designations in a single journal
+# Filtering for target OA designations in a single journal
 #  fsjournal <- sjournal %>% 
 #    filter(grepl(paste(patt, collapse = "|"), OAdes))
-  # Intersection of Volume-Issue combinations that had either target OA designation. 
+# Intersection of Volume-Issue combinations that had either target OA designation. 
 #  sectjournal <- sjournal %>% 
 #    semi_join(fsjournal, by =c("Volume", "Issue"))
-  # Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
+# Data is grouped by Volume & Issue; Next apply the matchbytibble function to get designation-matched issues
 #  sectjournal %>% 
 #    group_split(Volume,Issue) %>% 
 #    map(~ GAmatchbytibble(.x))
@@ -360,54 +377,18 @@ matched <- as.data.frame(rbindlist(matchlist))
 # Convert list of lists to data.frame
 #GCmatched <- as.data.frame(rbindlist(GCmatchlist))
 
-# 5d. Write final files
-write_csv(datum, file = "data/OA_data_fin.csv")
-write_csv(matched, file = "data/matched_OA_data_fin.csv")
+
+#qc for APC label:
+#length(datum$apc_cat[datum$apc_cat=="hiAPC"])
+#9484 records are hiAPC
+#length(datum$apc_cat[datum$apc_cat=="lowAPC"])
+#3834 records are lowAPC
+#length(datum$apc_cat[datum$apc_cat=="noAPC"])
+#76679 records are noAPC
+#last number should match number not labeled as Other Gold
+#length(datum$OAlab[datum$OAlab!="Other Gold"])
+#76679 records are labeled as NOT other gold
+
+##random lines moved from code
+#removed norm_cit from column selection, wanted dataset without truncating or fencing values
 #write_csv(GCmatched, file = "data/GCmatched_OA_data_fin.csv")
-# 6. Make data tables
-t1=datum[,c("year","jour","field","norm_cit","OAlab")]
-t1$jour=as.factor(t1$jour)
-
-#make dummy column to count articles
-t1$art=1
-
-#use art column to get sum of articles by field/journal
-num.art=summaryBy(art~field+jour,data=t1,FUN=c(mean,sum))
-colnames(num.art)=c("field","jour","jour_count","Number articles")
-
-#further summarize by field to get journal count and article count by field
-num.jour=summaryBy(jour_count+`Number articles`~field,data=num.art,FUN=c(sum))
-
-#add a column for the matched data
-t1m=matched[,c("year","jour","field","norm_cit","OAlab")] #need to edit this since the name of matched data has changed!
-t1m$jour=as.factor(t1m$jour)
-t1m$art=1
-num.art3=summaryBy(art~field+jour,data=t1m,FUN=c(mean,sum))
-colnames(num.art3)=c("field","jour","jour_count","Number articles")
-num.jour2=summaryBy(jour_count+`Number articles`~field,data=num.art3,FUN=c(sum))
-
-#remove NA field (need to fix later!)
-#num.jour2=num.jour2[complete.cases(num.jour2),]
-table1=cbind(num.jour,num.jour2$`Number articles.sum`)
-
-#get mean cit per access type
-num.art2=dcast(t1,field~OAlab,value.var="art",fun.aggregate = length)
-
-table1=cbind(table1,num.art2[,2:5])
-
-#add col names
-colnames(table1)=c("Research Area","Number of Journals","Number of Articles","Number of Matched Articles","Bronze","Closed Access","Green","Other Gold")
-
-#fix field names
-table1$`Research Area`=c("Biochemistry & Molecular Biology","Cell Biology","Entomology","Evolutionary Biology","Genetics & Heredity",
-               "Marine & Freshwater Biology","Microbiology","Mycology","Neurosciences & Neurology","Oncology",         
-               "Plant Sciences","Zoology")
-
-#make row for totals and grand means
-totals=c("Totals",round(sum(table1$`Number of Journals`),0),round(sum(table1$`Number of Articles`),0),round(sum(table1$`Number of Matched Articles`),0),sum(table1$Bronze),sum(table1$`Closed Access`),sum(table1$Green),sum(table1$`Other Gold`))
-
-#rbind totals to table1
-table1_new=rbind(table1,totals)
-
-#output table
-write.csv(table1_new,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F)
