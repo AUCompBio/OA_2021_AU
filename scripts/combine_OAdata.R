@@ -150,7 +150,7 @@ datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(d
 # 5. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
                                  year, auth_count,Volume,
-                                 Issue, apc_cat)
+                                 Issue, apc_cat, AIS, JCR_quart, field)
 
 # 6. Generating a matched dataset for Other Gold vs Green  
 #Initializing empty list
