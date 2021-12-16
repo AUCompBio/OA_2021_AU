@@ -118,11 +118,12 @@ hist(datum$citations)#hist(datum$clean_citations)
 mean(datum$citations) #mean(datum$clean_citations)
 var(datum$citations) #var(datum$clean_citations)
 
-hist(datum$norm_cit) # for alternative normalization metric
+#Normalized citation column no longer exists
+#hist(datum$norm_cit) # for alternative normalization metric
 # clean citations is not normally distributed; likely should not use 
 #   linear model to fit these data. should use generalized linear model (Poisson).
-mean(datum$norm_cit)
-var(datum$norm_cit) # for alternative normalization metric
+#mean(datum$norm_cit)
+#var(datum$norm_cit) # for alternative normalization metric
 # the variance is higher than the mean, indicating an expectation of 
 #   over-dispersion in the model.
 
