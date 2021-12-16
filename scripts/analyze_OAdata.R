@@ -44,7 +44,20 @@ library(performance)
 library(stargazer) # stargazer does not like tibbles
 library(MASS)
 
+#May need to set working directory first
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+#'jour' is journal
+#'citations' is number of citations (y-variable)
+#'OAdes' - 
+#'OAlab' - type of access (closed, green, bronze, other gold)
+#'year' is year of publication
+#'Volume' is volume of journal publication is in
+#'issue' is issue of journal publication is in
+#'apc_cat' is Article processing charge (noAPC, lowAPC, highAPC)
+#'AIS' is Article Influence Score - journal level metric
+#'JCR_quart' is - from journal citation reports
+#'field' is Field of biology which article is about
+#'auth_count_scaled' is scaled number of authors
 
 
 # check data
@@ -138,23 +151,23 @@ hist(datum$auth_count, breaks = 100)
 datum$jour <- as.factor(datum$jour)
 datum$OAlab <- as.factor(datum$OAlab)
 datum$field <- as.factor(datum$field)
-datum$jour_loc <- as.factor(datum$jour_loc)
+#datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
-datum$pub <- as.factor(datum$pub)
+#datum$pub <- as.factor(datum$pub)
 datum$year <- as.factor(datum$year)
-datum$gni_class <- as.factor(datum$gni_class)
+#datum$gni_class <- as.factor(datum$gni_class)
 
 # Rescaled numerical fields, into new columns
 datum <- datum %>% 
   mutate(auth_count_scaled = scale(auth_count,center = TRUE, scale = TRUE),
          AIS_scaled = scale(AIS,center = TRUE, scale = TRUE))
 #datum$auth_count_scaled <- scale(datum$auth_count)
-#datum$AIS_scaled <- scale(datum$AIS)
+datum$AIS_scaled <- scale(datum$AIS)
 # this makes a matrix inside of our dataframe
 
 
 
-mod2.2 <- glmer(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
+mod2.2 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum, family = poisson(link = "log"))
 
 
