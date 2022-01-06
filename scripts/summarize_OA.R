@@ -30,9 +30,13 @@ library(performance)
 #install.packages("stargazer")
 library(stargazer) # stargazer does not like tibbles
 
+#read in final data and matched datasets
+datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+matched <- read_csv("data/matched_OA_data_fin.csv", col_names = TRUE)
+
 ### COPIED FROM "combine_OAdata.R" ###
 # 6. Make data tables
-t1=datum[,c("year","jour","field","norm_cit","OAlab")]
+t1=datum[,c("year","jour","field","citations","OAlab")]
 t1$jour=as.factor(t1$jour)
 
 #make dummy column to count articles
@@ -46,7 +50,7 @@ colnames(num.art)=c("field","jour","jour_count","Number articles")
 num.jour=summaryBy(jour_count+`Number articles`~field,data=num.art,FUN=c(sum))
 
 #add a column for the matched data
-t1m=matched[,c("year","jour","field","norm_cit","OAlab")] #need to edit this since the name of matched data has changed!
+t1m=matched[,c("year","jour","field","citations","OAlab")] #need to edit this since the name of matched data has changed!
 t1m$jour=as.factor(t1m$jour)
 t1m$art=1
 num.art3=summaryBy(art~field+jour,data=t1m,FUN=c(mean,sum))
