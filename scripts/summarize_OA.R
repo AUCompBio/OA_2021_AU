@@ -88,27 +88,35 @@ write.csv(table1_new,"outputs/stats/Table1_Data_Summary.csv",row.names=F,quote=F
 ### COPIED FROM "analyze_OAdata.R" ###
 # Plotting ============
 
+#remove outlier citation counts to facilitate plotting
+#start with cutoff of 5k (removes 5 datapoints)
+#increase to 500 (removes 195 more datapoint)
+datum=subset(datum, datum$citations<=500)
+
+#need to also remove zeros
+datum=subset(datum, datum$citations!=0)
+
 # reset vars
-datum$APC = as.numeric(datum$APC)
-datum$norm_cit = as.numeric(datum$norm_cit)
+#datum$APC = as.numeric(datum$APC)
+datum$citations = as.numeric(datum$citations)
 datum$jour = as.character(datum$jour)
 
 # subset datum by auth_count
-tdatum = subset(datum, jour == c('BRAIN',
-                                 'ZOOLOGY',
-                                 'ZEBRAFISH'))
-tdatum$group = as.character(tdatum$group)
+#tdatum = subset(datum, jour == c('BRAIN',
+#                                 'ZOOLOGY',
+#                                 'ZEBRAFISH'))
+#tdatum$group = as.character(tdatum$group)
 
 # bivar scatter: X x Y x Z
-ggplot(tdatum, aes(x=APC,
-                   y=norm_cit,
-                   col=group)) +
-  geom_point(col='gray') + 
-  geom_smooth(method="lm", se=FALSE, size=.5) + 
-  geom_abline(aes(intercept=0, 
-                  slope=1),
-              data=datum, size=1, 
-              linetype='longdash')
+#ggplot(tdatum, aes(x=APC,
+#                   y=citations,
+#                   col=group)) +
+#  geom_point(col='gray') + 
+#  geom_smooth(method="lm", se=FALSE, size=.5) + 
+#  geom_abline(aes(intercept=0, 
+#                  slope=1),
+ #             data=datum, size=1, 
+  #            linetype='longdash')
 
 
 
@@ -124,29 +132,32 @@ data_summary <- function (datum) {
 }
 
 #plots access time by author count; not really useful plot
-plot(norm_cit ~ APC, data = datum)
-ggplot(datum, aes(x=APC, y=norm_cit, color=OAlab)) +
-  geom_point() + facet_wrap(~auth_count) 
+#plot(norm_cit ~ APC, data = datum)
+#ggplot(datum, aes(x=APC, y=norm_cit, color=OAlab)) +
+#  geom_point() + facet_wrap(~auth_count) 
+
+
 
 # violin plot: Citations by Access Designation
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) 
+vplot <- ggplot(datum,aes(x=OAlab,y=citations,fill=OAlab)) +
+  geom_violin(trim=TRUE) 
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 
-vplot + annotate(geom="text", x="Bronze", y=-20, label = sum.stat[1,4])+
-  annotate(geom="text", x="Closed Access", y=-20, label = sum.stat[2,4])+
-  annotate(geom="text", x="Green", y=-20, label = sum.stat[3,4])+
-  annotate(geom="text", x="Other Gold", y=-20, label = sum.stat[4,4])
+#vplot + annotate(geom="text", x="Bronze", y=-20, label = sum.stat[1,4])+
+#  annotate(geom="text", x="Closed Access", y=-20, label = sum.stat[2,4])+
+#  annotate(geom="text", x="Green", y=-20, label = sum.stat[3,4])+
+#  annotate(geom="text", x="Other Gold", y=-20, label = sum.stat[4,4])
 # + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.8, binwidth=1) # add above to include data points in plot
-ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+vplot
+#  ggsave("clean_vplot_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 # violin plot: Citations by Access Designation for each field
 
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
+vplot <- ggplot(datum,aes(x=OAlab,y=citations,fill=OAlab)) +
   geom_violin(trim=FALSE) +
   facet_wrap(~field)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
@@ -154,7 +165,7 @@ vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 vplot
-ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+#ggsave("clean_vplot_Field_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 #further delving into the research fields
 #downloaded from InCites
@@ -198,54 +209,66 @@ dev.off()
 
 # violin plot: Citations by Journal C Rank (JCR) quartile
 
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
+vplot <- ggplot(datum,aes(x=OAlab,y=citations,fill=OAlab)) +
+  geom_violin(trim=TRUE) +
   facet_wrap(~JCR_quart)
 vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_JCR_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+vplot
+#ggsave("clean_vplot_JCR_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
 
 # violin plot: Citations by Year Published
 
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
+vplot <- ggplot(datum,aes(x=OAlab,y=citations,fill=OAlab)) +
+  geom_violin(trim=TRUE) +
   facet_wrap(~year)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-# violin plot: Citations by Publisher
-
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~publisher)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
-  xlab("Status") + ylab("Citations") + 
-  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
-  stat_summary(fun.data=data_summary)
-
-ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
-
-
-# violin plot: Citations by Corresponding Author Country of Origin
-#Not a meaningful plot - too much going on!
-vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
-  geom_violin(trim=FALSE) +
-  facet_wrap(~auth_loc)
-vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+vplot <- vplot + ggtitle("Open Access Status & Citation Count per Year") +
   xlab("Status") + ylab("Citations") + 
   theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
   stat_summary(fun.data=data_summary)
 vplot
+#ggsave("clean_vplot_Year_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+
+
+# violin plot: Citations by APC
+
+vplot <- ggplot(datum,aes(x=apc_cat,y=citations)) +
+  geom_violin(trim=TRUE) 
+vplot <- vplot + ggtitle("Citation Count per APC") +
+  xlab("Status") + ylab("Citations") + 
+  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+  stat_summary(fun.data=data_summary)
+vplot
+#ggsave("clean_vplot_APC_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+# violin plot: Citations by Publisher
+#data not in the dataset???
+#vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
+#  geom_violin(trim=FALSE) +
+#  facet_wrap(~publisher)
+#vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+#  xlab("Status") + ylab("Citations") + 
+#  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+#  stat_summary(fun.data=data_summary)
+
+#ggsave("clean_vplot_Publisher_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
+
+
+# violin plot: Citations by Corresponding Author Country of Origin
+#Not a meaningful plot - too much going on!
+#vplot <- ggplot(datum,aes(x=OAlab,y=norm_cit,fill=OAlab)) +
+#  geom_violin(trim=FALSE) +
+#  facet_wrap(~auth_loc)
+#vplot <- vplot + ggtitle("Open Access Status & Citation Count") +
+#  xlab("Status") + ylab("Citations") + 
+#  theme(legend.position="none", plot.title=element_text(hjust = 0.5)) + 
+#  stat_summary(fun.data=data_summary)
+#vplot
 #ggsave("clean_vplot_Auth_Loc_OAdes.png", device = "png", path ="outputs/plots/", width=4,height=4)
 
 
