@@ -162,7 +162,7 @@ datum <- datum %>%
   mutate(auth_count_scaled = scale(auth_count,center = TRUE, scale = TRUE),
          AIS_scaled = scale(AIS,center = TRUE, scale = TRUE))
 #datum$auth_count_scaled <- scale(datum$auth_count)
-datum$AIS_scaled <- scale(datum$AIS)
+datum$AIS_scaled <- scale(datum$AIS) #why are we doing this twice?
 # this makes a matrix inside of our dataframe
 
 

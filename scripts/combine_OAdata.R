@@ -147,11 +147,15 @@ abline(v=3490, col="red")
 #apply classification (need to add a label for green to be free)
 datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(datum$APC<=3490 & datum$OAlab=="Other Gold","lowAPC","noAPC"))
 
+#grab all records that are other gold 
+othgld <- datum %>% filter(OAlab == "Other Gold")
 # 5. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
                                  year, auth_count,Volume,
                                  Issue, apc_cat, AIS, JCR_quart, field)
-
+othgld <- othgld %>% dplyr::select(jour, citations, OAdes, OAlab, 
+                                  year, auth_count,Volume,
+                                  Issue, APC, apc_cat, AIS, JCR_quart, field)
 # 6. Generating a matched dataset for Other Gold vs Green  
 #Initializing empty list
 matchlist <- list()
@@ -170,8 +174,6 @@ matched <- matched %>% filter(str_detect(OAdes, "Gold|Green")) %>% #45616 record
 
 # How did this effected representation across journals?
 matched %>% count(jour,OAlab)
-
-
 # results into object
 jbam <- matched %>% count(jour,OAlab)
 
@@ -183,8 +185,9 @@ sink()
 # also nice, looks MD formatted already
 knitr::kable(jbam)
 
-
-# 7. Write final files
+# 7. Output ONLY other gold records + the actual APC values
+write_csv(othgld, file = "data/OA_data_othergoldONLY.csv")
+# 8. Write final files
 write_csv(datum, file = "data/OA_data_fin.csv")
 write_csv(matched, file = "data/matched_OA_data_fin.csv")
 
@@ -334,19 +337,19 @@ write_csv(matched, file = "data/matched_OA_data_fin.csv")
 #}
 
 #three new columns to datum
-datum$auth_loc=auth_loc
-datum$corrAuth_gni=corrAuth_gni
-datum$corrAuth_code=corrAuth_code
+#datum$auth_loc=auth_loc
+#datum$corrAuth_gni=corrAuth_gni
+#datum$corrAuth_code=corrAuth_code
 #list all countries
-myCountries=unique(sort(datum$auth_loc))
+#myCountries=unique(sort(datum$auth_loc))
 #write.csv(myCountries,file="data/corresponding_author_country_list.csv",row.names = F,quote = F)
 #match with country list for maptools package
-CountryIntersect = myCountries %in% wrld_simpl@data$NAME
+#CountryIntersect = myCountries %in% wrld_simpl@data$NAME
 #list countries not in list; sanity check! All should already be in the list from nasty ifelse statement within the loop!
-myCountries[CountryIntersect==FALSE]
+#myCountries[CountryIntersect==FALSE]
 
 #3e Adding classification of low or high income
-datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
+#datum$gni_class = ifelse(datum$corrAuth_gni >= 12736, 'High', 'Low')
 ## Matching for Green and closed vol/iss combo
 # Redefining function for Green access 
 ## Function that isolates Volume/Issues that have target OA designations in them. Applies the "matchbytibble" function to write issues that have both target OA designations to a new csv.
