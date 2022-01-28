@@ -148,14 +148,15 @@ abline(v=3490, col="red")
 datum$apc_cat=ifelse(datum$APC>3490 & datum$OAlab=="Other Gold","hiAPC",ifelse(datum$APC<=3490 & datum$OAlab=="Other Gold","lowAPC","noAPC"))
 
 #grab all records that are other gold 
-othgld <- datum %>% filter(OAlab == "Other Gold")
+# othgld <- datum %>% filter(OAlab == "Other Gold")
+
 # 5. select desired cols
 datum <- datum %>% dplyr::select(jour, citations, OAdes, OAlab, 
                                  year, auth_count,Volume,
-                                 Issue, apc_cat, AIS, JCR_quart, field)
-othgld <- othgld %>% dplyr::select(jour, citations, OAdes, OAlab, 
-                                  year, auth_count,Volume,
-                                  Issue, APC, apc_cat, AIS, JCR_quart, field)
+                                 Issue, apc_cat, APC, AIS, JCR_quart, field)
+# othgld <- othgld %>% dplyr::select(jour, citations, OAdes, OAlab, 
+#                                  year, auth_count,Volume,
+#                                  Issue, APC, apc_cat, AIS, JCR_quart, field)
 # 6. Generating a matched dataset for Other Gold vs Green  
 #Initializing empty list
 matchlist <- list()
@@ -165,13 +166,15 @@ jnames <- unique(datum$jour)
 sapply(jnames, splitbyjournal)
 # Convert list of lists to data.frame
 matched <- as.data.frame(rbindlist(matchlist))
+
+# Grab other gold records from data that was matched
+oGM <- matched %>% filter(OAlab == "Other Gold")
 # Filtering for records that have "Gold or Green" in the OAdes label
 matched <- matched %>% filter(str_detect(OAdes, "Gold|Green")) %>% #45616 records that include other gold or green designations
   # Filtering out records that are both Other Gold and Green 
   filter(!str_detect(OAdes, ", Other|Gold,")) %>% # removed 16120 that have both other gold and green designations
   # Filtering out records that have any bronze designations
   filter(!str_detect(OAdes, "Bronze")) # removed 23204 that have bronze designations
-
 # How did this effected representation across journals?
 matched %>% count(jour,OAlab)
 # results into object
@@ -185,8 +188,10 @@ sink()
 # also nice, looks MD formatted already
 knitr::kable(jbam)
 
+
 # 7. Output ONLY other gold records + the actual APC values
 write_csv(othgld, file = "data/OA_data_othergoldONLY.csv")
+write_csv(oGM, file = "data/OA_matched_othergoldONLY.csv")
 # 8. Write final files
 write_csv(datum, file = "data/OA_data_fin.csv")
 write_csv(matched, file = "data/matched_OA_data_fin.csv")
