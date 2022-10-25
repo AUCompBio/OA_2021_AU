@@ -11,65 +11,90 @@ library(car)
 
 
 ###May need to change working directory 
-setwd("C:/Users/TDS0009/Documents/GitHub/OA_2021_AU")
+#setwd("C:/Users/tds0009/Documents/GitHub/OA_2021_AU")
+#setwd("C:/Users/tds0009/OneDrive - Auburn University/Student Research/Amanda Clark")
+
 
 
 ### Get data
-datum=read.csv("C:/Users/TDS0009/Documents/GitHub/OA_2021_AU/data/matched_OA_data_fin.csv")
+datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+#datum=read.csv("C:/Users/TDS0009/Documents/GitHub/OA_2021_AU/data/matched_OA_data_fin.csv")
 head(datum)
+#datum$OAlab=as.factor(datum$OAlab)
+#levels(datum$OAlab)
 
+#Remove those samples that do not have an issue
+Missing.Issue=which(is.na(datum$Issue)==TRUE)
+Missing.Issue
+#datum[4206,]
+datum=datum[-Missing.Issue,]
+which(is.na(datum$Issue)==TRUE)
+
+datum=filter(datum,OAlab=="Closed Access" | OAlab=="Other Gold")
+datumMatch=datum %>%
+  group_by(jour) %>%
+  group_by(Volume,.add=TRUE) %>%
+  group_by(Issue,.add=TRUE) %>%
+  filter(any(OAlab=="Other Gold")&any(OAlab=="Closed Access"))
+datumMatch
+
+CountTable=datumMatch %>%
+  group_by(jour) %>%
+  group_by(Volume,.add=TRUE) %>%
+  group_by(Issue,.add=TRUE) %>%
+  group_by(OAlab,.add=TRUE) %>%
+  count()
+
+CountTable
+#write.csv(CountTable,"MatchedSamples.csv")
 
 #####convert categorical variables to factors and explore levels
 
 #Access
-datum$OAlab[datum$OAlab=="Closed Accesr"]="Closed Access"
-datum$OAlab[datum$OAlab=="Closed Access"]="Access Closed"
-datum$OAlab <- as.factor(datum$OAlab)
-levels(datum$OAlab)
-summary(datum$OAlab)
+#datum$OAlab[datum$OAlab=="Closed Accesr"]="Closed Access"
+datumMatch$OAlab[datumMatch$OAlab=="Closed Access"]="Access Closed"
+datumMatch$OAlab <- as.factor(datumMatch$OAlab)
+levels(datumMatch$OAlab)
+summary(datumMatch$OAlab)
 
 #year
-datum$year=as.factor(datum$year)
-levels(datum$year)
-summary(datum$year)
+datumMatch$year=as.factor(datumMatch$year)
+levels(datumMatch$year)
+summary(datumMatch$year)
 
 #JCR Quartile
-datum$JCR_quart=as.factor(datum$JCR_quart)
-levels(datum$JCR_quart)
-summary(datum$JCR_quart)
+datumMatch$JCR_quart=as.factor(datumMatch$JCR_quart)
+levels(datumMatch$JCR_quart)
+summary(datumMatch$JCR_quart)
 
 #journal
-datum$jour=as.factor(datum$jour)
-levels(datum$jour)
-summary(datum$jour)
+datumMatch$jour=as.factor(datumMatch$jour)
+levels(datumMatch$jour)
+summary(datumMatch$jour)
 #print range of records by journal
-range(summary(datum$jour))
+range(summary(datumMatch$jour))
 #number of journals
-length(unique(sort(datum$jour)))
+length(unique(sort(datumMatch$jour)))
 
 
 #field
-datum$field=as.factor(datum$field)
-levels(datum$field)
-summary(datum$field)
+datumMatch$field=as.factor(datumMatch$field)
+levels(datumMatch$field)
+summary(datumMatch$field)
 #number of fields
-length(unique(sort(datum$field)))
+length(unique(sort(datumMatch$field)))
 
 #Volumes
-datum$Volume=as.factor(datum$Volume)
-levels(datum$Volume)
-summary(datum$Volume)
+datumMatch$Volume=as.factor(datumMatch$Volume)
+levels(datumMatch$Volume)
+summary(datumMatch$Volume)
 
 
 #issues
-datum$Issue=as.factor(datum$Issue)
-levels(datum$Issue)
-summary(datum$Issue)
-#Remove those samples that do not have an issue
-Missing.Issue=which(is.na(datum$Issue)==TRUE)
-#datum[103993,]
-datum=datum[-Missing.Issue,]
-which(is.na(datum$Issue)==TRUE)
+datumMatch$Issue=as.factor(datumMatch$Issue)
+levels(datumMatch$Issue)
+summary(datumMatch$Issue)
+
 
 
 
@@ -77,84 +102,75 @@ which(is.na(datum$Issue)==TRUE)
 ### Examine continuous variables
 
 #author count
-summary(as.factor(datum$auth_count))
-hist(datum$auth_count)
+summary(as.factor(datumMatch$auth_count))
+hist(datumMatch$auth_count)
 
 #citations
 # Plot histogram; estimate mean & variance for response variables
-hist(datum$citations)#hist(datum$clean_citations)
-mean(datum$citations) #mean(datum$clean_citations)
-var(datum$citations) #var(datum$clean_citations)
-summary(as.factor(datum$citations))
+hist(datumMatch$citations)#hist(datum$clean_citations)
+mean(datumMatch$citations) #mean(datum$clean_citations)
+var(datumMatch$citations) #var(datum$clean_citations)
+summary(as.factor(datumMatch$citations))
 
 #AIS
-summary(datum$AIS)
-hist(datum$AIS)
+summary(datumMatch$AIS)
+hist(datumMatch$AIS)
 
 
 
 ##### Scaling continuous variables
 
 #Author count
-datum$auth_count_scaled <- scale(datum$auth_count)[,1]
-summary(datum$auth_count_scaled)
+datumMatch$auth_count_scaled <- scale(datumMatch$auth_count)[,1]
+summary(datumMatch$auth_count_scaled)
 
 #AIS
-datum$AIS_scaled <- scale(datum$AIS)[,1] 
-summary(datum$AIS_scaled)
-hist(datum$AIS_scaled)
+datumMatch$AIS_scaled <- scale(datumMatch$AIS)[,1] 
+summary(datumMatch$AIS_scaled)
+hist(datumMatch$AIS_scaled)
 
 
 
 ##### Examine citations by variables
 
 #Access
-datum$Gold=0
-datum$Green=0
-datum$Bronze=0
-datum$Closed=0
-for(i in 1:length(datum$citations)){
-  if(datum$OAlab[i]=="Other Gold"){datum$Gold[i]=1}
-  if(datum$OAlab[i]=="Green"){datum$Green[i]=1}
-  if(datum$OAlab[i]=="Bronze"){datum$Bronze[i]=1}
-  if(datum$OAlab[i]=="Access Closed"){datum$Closed[i]=1}
+datumMatch$Gold=0
+datumMatch$Closed=0
+for(i in 1:length(datumMatch$citations)){
+  if(datumMatch$OAlab[i]=="Other Gold"){datumMatch$Gold[i]=1}
+  if(datumMatch$OAlab[i]=="Access Closed"){datumMatch$Closed[i]=1}
 }
 
 
-Table1=datum %>% group_by(field) %>%
+Table1=datumMatch %>% group_by(field) %>%
   summarise(NumberofJournals=length(unique(jour)),
             NumberofArticles=length(citations),
-            Bronze=sum(Bronze),
             ClosedAccess=sum(Closed),
-            Green=sum(Green),
             OtherGold=sum(Gold))
 Table1
 sum(Table1$ClosedAccess)
-sum(Table1$Bronze)+sum(Table1$Green)+sum(Table1$OtherGold)
-sum(Table1$Bronze)
-sum(Table1$Green)
 sum(Table1$OtherGold)
 
 #Count of samples by field
-fieldCount=datum %>% group_by(field) %>%
+fieldCount=datumMatch %>% group_by(field) %>%
   summarise(Articles=length(citations))
 mean(fieldCount$Articles)
 min(fieldCount$Articles)
 max(fieldCount$Articles)
 
 #Counts of samples by jour
-jourCount=datum %>% group_by(jour) %>%
+jourCount=datumMatch %>% group_by(jour) %>%
   summarise(Articles=length(citations))
 mean(jourCount$Articles)
 min(jourCount$Articles)
 max(jourCount$Articles)
 
 #Total number of samples
-length(datum$citations)
+length(datumMatch$citations)
 
 
 ##### Naive analysis of results
-NaiveAnalysis=datum %>% group_by(OAlab) %>%
+NaiveAnalysis=datumMatch %>% group_by(OAlab) %>%
   summarise(Citations=mean(citations),
             sdCitations=sd(citations))
 NaiveAnalysis
@@ -184,6 +200,8 @@ results2 <- glmer.nb(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year
                      data = datum)
 
 anova(results2,results1,test='Chisq')
+summary(results2)
+exp(0.18870)
 
 
 
@@ -201,7 +219,7 @@ anova(results3,results2)
 Anova(results3)
 summary(results2)
 
-exp(0.19856)
+exp(0.18870)
 
 ##### Analysis of results
 
