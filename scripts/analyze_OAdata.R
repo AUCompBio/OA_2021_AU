@@ -43,6 +43,7 @@ library(performance)
 #install.packages("stargazer")
 library(stargazer) # stargazer does not like tibbles
 library(MASS)
+library(emmeans)
 
 #May need to set working directory first
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
@@ -149,7 +150,6 @@ hist(datum$auth_count, breaks = 100)
 
 #need to id variables we want as a factor
 datum$jour <- as.factor(datum$jour)
-datum$OAlab <- as.factor(datum$OAlab)
 datum$field <- as.factor(datum$field)
 #datum$jour_loc <- as.factor(datum$jour_loc)
 datum$JCR_quart <- as.factor(datum$JCR_quart)
@@ -164,17 +164,28 @@ datum <- datum %>%
 #datum$auth_count_scaled <- scale(datum$auth_count)
 datum$AIS_scaled <- scale(datum$AIS) #why are we doing this twice?
 # this makes a matrix inside of our dataframe
+datum$ln_AIS=log(datum$AIS)
+datum$ln_auth_count=log(datum$auth_count)
+
+datum$OAlab[datum$OAlab=="Closed Access"]="Access Closed"
+datum$OAlab <- as.factor(datum$OAlab)
+
+#set.seed(123)
+#randomVector=seq(1:length(datum$OAlab))
+#x=sample(randomVector,20000)
+#datumSub=datum[x,]
+# mod2.2 <- glmer(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
+#                 data = datum, family = poisson(link = "log"))
 
 
 
-mod2.2 <- glmer(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
-                data = datum, family = poisson(link = "log"))
-
-
-
-mod2.2.1 <- glmer.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
+mod2.2.1 <- glmer.nb(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour), 
                 data = datum)
 #Uses raw Citations; takes out GNI_class. 
+
+#Compare both models
+#anova(mod2.2.1,mod2.2)
+#Significant, so negative binomial is better; poisson doesn't adequately fit the data
 
 # ### Remove random effects to evaluate warnings
 # mod2.2a <- glm(norm_cit~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
@@ -186,8 +197,114 @@ mod2.2.1 <- glmer.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_
 # mod2.2b <- glm(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
 #                       data = datum, family = poisson(link = "log"))
 # ### Compare to negative binomial model
-# mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year+gni_class, 
+#mod2.2d <- glm.nb(citations~relevel(OAlab, ref = "Closed Access")+auth_count_scaled+JCR_quart+AIS_scaled+year, 
 #                   data = datum)
+# ### Evaluations indicate that warnings can be ignored. 
+
+### Test of interactions
+
+mod2.2.1.int <- glmer.nb(citations~OAlab*auth_count_scaled+
+                       JCR_quart+JCR_quart:OAlab+
+                       AIS_scaled+AIS_scaled:OAlab+
+                       year+year:OAlab+
+                       (1|field/jour), 
+                     data = datum)
+
+mod2.2.1.int.glm <- glm.nb(citations~OAlab*auth_count_scaled+
+                           JCR_quart+JCR_quart:OAlab+
+                           AIS_scaled+AIS_scaled:OAlab+
+                           year+year:OAlab, 
+                         data = datum)
+
+mod2.2.2.int <- glmer.nb(citations~OAlab*auth_count_scaled*
+                           JCR_quart*AIS_scaled*year+
+                           (1|field/jour), 
+                         data = datum)
+
+
+mod3.2.1 <- glmer.nb(citations~OAlab+ln_auth_count+JCR_quart+ln_AIS+year+(1|field/jour), 
+                     data = datum)
+Sub3.2.1 <- glmer.nb(citations~OAlab+ln_auth_count+JCR_quart+ln_AIS+year+(1|field/jour), 
+                     data = datumSub)
+
+
+mod3.2.1.int <- glmer.nb(citations~OAlab*ln_auth_count+
+                           JCR_quart+JCR_quart:OAlab+
+                           ln_AIS+ln_AIS:OAlab+
+                           year+year:OAlab+
+                           (1|field/jour), 
+                         data = datum)
+Sub3.2.1.int <- glmer.nb(citations~OAlab*ln_auth_count+
+                           JCR_quart+JCR_quart:OAlab+
+                           ln_AIS+ln_AIS:OAlab+
+                           year+year:OAlab+
+                           (1|field/jour), 
+                         data = datumSub)
+
+
+mod3.2.2.int <- glmer.nb(citations~OAlab*ln_auth_count*
+                           JCR_quart*ln_AIS*year+
+                           (1|field/jour), 
+                         data = datum)
+Sub3.2.2.int <- glmer.nb(citations~OAlab*ln_auth_count*
+                           JCR_quart*ln_AIS*year+
+                           (1|field/jour), 
+                         data = datumSub)
+
+
+
+
+###use emmeans (least-squares means) and Plots of results for easy of understanding
+
+#Interaction between author count and access
+emtrends(mod2.2.1.int,pairwise~OAlab,var="auth_count_scaled")
+emmip(mod2.2.1.int,OAlab~auth_count_scaled,cov.reduce=range)
+m_auth_count=mean(datum$auth_count_scaled, na.rm=TRUE)
+sd_auth_count=sd(datum$auth_count_scaled,na.rm=TRUE)
+emmip(mod2.2.1.int,OAlab~auth_count_scaled,
+      at=list(auth_count_scaled=c(m_auth_count-2*sd_auth_count,m_auth_count,
+                                  m_auth_count+2*sd_auth_count)),
+      CIs=TRUE,level=0.95,position="jitter",type="response")
+
+
+#Interaction between JCR quartile and access
+resultsJCRInt=emmeans(mod2.2.1.int,~OAlab*JCR_quart,type="response")
+resultsJCRInt
+plot(resultsJCRInt)
+emmip(mod2.2.1.int,OAlab~JCR_quart,type="response",
+      CIs=TRUE,level=0.95,position="jitter")
+
+#Interaction between AIS_scaled and access
+emtrends(mod2.2.1.int,pairwise~OAlab,var="AIS_scaled")
+emmip(mod2.2.1.int,OAlab~AIS_scaled,cov.reduce=range,at=list(auth_count_scaled=c(0)))
+### Why is pattern backward???###
+
+
+#Interaction between year and access
+resultsYearInt=emmeans(mod2.2.1.int,~OAlab*year,type="response")
+resultsYearInt
+plot(resultsYearInt)
+emmip(mod2.2.1.int,OAlab~year,type="response")
+
+
+emmip(mod2.2.1.int,OAlab~auth_count_scaled|AIS_scaled,cov.reduce=range,
+      at=list(auth_count_scaled=c(m_auth_count-2*sd_auth_count,m_auth_count,
+                                  m_auth_count+2*sd_auth_count),
+              AIS_scaled=c(-0.5,0,1)))
+
+emmip(mod2.2.1.int,OAlab~AIS_scaled|auth_count_scaled,cov.reduce=range,
+      at=list(auth_count_scaled=c(m_auth_count-2*sd_auth_count,m_auth_count,
+                                  m_auth_count+2*sd_auth_count),
+              AIS_scaled=c(-0.5,0,1)))
+
+
+emmip(mod2.2.1.int,OAlab~auth_count_scaled|AIS_scaled,cov.reduce=range,
+      at=list(auth_count_scaled=c(0,40,80),
+              AIS_scaled=c(-0.5,0,1)))
+
+
+
+###
 
 # Putting model coefficients into a dataframe
 Mod2.2 <- as.data.frame(coef(summary(mod2.2)))
