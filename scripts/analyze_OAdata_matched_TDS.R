@@ -17,7 +17,9 @@ library(car)
 
 
 ### Get data
-datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
+datum <- read.csv("data/OA_data_fin.csv")
+
+#datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 #datum=read.csv("C:/Users/TDS0009/Documents/GitHub/OA_2021_AU/data/matched_OA_data_fin.csv")
 head(datum)
 #datum$OAlab=as.factor(datum$OAlab)
@@ -185,7 +187,7 @@ pairs(NaiveResults,adjust="bonferroni")
 ##### Explore collinearity among variables
 
 mod2.0.base=glm(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year,
-                data=datum,family=poisson)
+                data=datumMatch,family=poisson)
 ###Only used to explore collinearity among variables
 vif(mod2.0.base)
 
@@ -193,13 +195,13 @@ vif(mod2.0.base)
 
 #####Full analysis with matched pairs
 results1 <- glmer(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour/Volume/Issue), 
-                data = datum, family = poisson)
+                data = datumMatch, family = poisson)
 
 
 results2 <- glmer.nb(citations~OAlab+auth_count_scaled+JCR_quart+AIS_scaled+year+(1|field/jour/Volume/Issue), 
-                     data = datum)
+                     data = datumMatch)
 
-anova(results2,results1,test='Chisq')
+anova(results1,results2,test='Chisq')
 summary(results2)
 exp(0.18870)
 
@@ -212,15 +214,82 @@ results3 <- glmer.nb(citations~OAlab*auth_count_scaled+
                            AIS_scaled+AIS_scaled:OAlab+
                            year+year:OAlab+
                            (1|field/jour/Volume/Issue), 
-                         data = datum)
+                         data = datumMatch)
 anova(results3,results2)
 ###inclusion of interactions DOES NOT significantly improves the model. 
 
 Anova(results3)
-summary(results2)
+summary(results3)
 
 exp(0.18870)
 
 ##### Analysis of results
+plot(residuals(results3))
+
+
+
+#### Test non-linearity of author count
+
+
+datumMatch$AuthCat=NA
+for(i in 1:length(datumMatch$citations)){
+  if(datumMatch$auth_count[i]==1){datumMatch$AuthCat[i]="1"}
+  if(datumMatch$auth_count[i]==2){datumMatch$AuthCat[i]="2"}
+  if(datumMatch$auth_count[i]>=3 & datumMatch$auth_count[i]<=4){datumMatch$AuthCat[i]="4"}
+  if(datumMatch$auth_count[i]>=5 & datumMatch$auth_count[i]<=8){datumMatch$AuthCat[i]="8"}
+  if(datumMatch$auth_count[i]>=9 & datumMatch$auth_count[i]<=16){datumMatch$AuthCat[i]="16"}
+  if(datumMatch$auth_count[i]>=17 & datumMatch$auth_count[i]<=32){datumMatch$AuthCat[i]="32"}
+  if(datumMatch$auth_count[i]>=33 & datumMatch$auth_count[i]<=64){datumMatch$AuthCat[i]="64"}
+  if(datumMatch$auth_count[i]>=65 & datumMatch$auth_count[i]<=128){datumMatch$AuthCat[i]="128"}
+  if(datumMatch$auth_count[i]>=129 & datumMatch$auth_count[i]<=256){datumMatch$AuthCat[i]="256"}
+  if(datumMatch$auth_count[i]>=257){datumMatch$AuthCat[i]="540"}
+}
+
+datumMatch$AuthCat=as.factor(datumMatch$AuthCat)
+levels(datumMatch$AuthCat)
+
+summary(datumMatch$AuthCat)
+results4 <- glmer.nb(citations~OAlab*AuthCat+
+                       JCR_quart+JCR_quart:OAlab+
+                       AIS_scaled+AIS_scaled:OAlab+
+                       year+year:OAlab+
+                       (1|field/jour/Volume/Issue), 
+                     data = datumMatch)
+anova(results4,results3,test="LRT")
+Anova(results4)
+
+#### Categorical is not a significant improvement in fit
+
+
+
+####Plots
+
+
+####Author Count
+
+x=c(1,2,4,8,16,32)
+x_Scaled=(x-mean(datumMatch$auth_count,na.rm=TRUE))/sd(datum$auth_count,na.rm=TRUE)
+#emmip(mod2.2.1.int,OAlab~auth_count_scaled,
+#      at=list(auth_count_scaled=x_Scaled),
+#      CIs=TRUE,level=0.95,position="jitter",type="response")
+#
+AuthInt=emmip(results3,OAlab~auth_count_scaled,
+              at=list(auth_count_scaled=x_Scaled),
+              CIs=TRUE,level=0.95,type="response",
+              plotit=FALSE)
+ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
+                   x=auth_count_scaled,y=yvar,
+                   ymin=LCL,ymax=UCL))+
+  geom_line()+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1))+
+  labs(y="Citations",x="Authors")+
+  theme_classic()+
+  scale_x_continuous(labels=x,
+                     breaks=x_Scaled)+
+  labs(title="Relationship between authors, access type, and citations")+
+  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
+  scale_shape_manual(values=c(15:18))+
+  theme(plot.title=element_text(hjust=0.5))+
+  theme(legend.position=c(0.15,0.8))  
 
 
