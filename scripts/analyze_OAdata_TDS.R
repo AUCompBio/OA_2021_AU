@@ -16,6 +16,7 @@ rm(list=ls(all.names=TRUE))
 
 # install.packages('ggplot2') # run once
 library(ggplot2)
+library(ggpubr)
 # install.packages('tidyverse') # run once
 library(tidyverse)
 # install.packages('broom') # run once
@@ -101,7 +102,7 @@ summary(datum)
 summary(as.factor(datum$auth_count))
 which(is.na(datum$auth_count)==TRUE)
 #datum[103993,]
-datum=datum[-c(103993),]
+datum=datum[-c(103993),] #Remove sample without author counts
 
 
 
@@ -188,14 +189,14 @@ summary(datum$auth_count)
 
 sd(datum$auth_count,na.rm=TRUE)
 #sd=6.290967
-datum$AIS_scaled <- scale(datum$AIS)[,1] #why are we doing this twice?
-# this makes a matrix inside of our dataframesum
+datum$AIS_scaled <- scale(datum$AIS)[,1] 
+
 #datum$ln_AIS=log(datum$AIS)
 #datum$ln_auth_count=log(datum$auth_count)
 
-datum$OAlab[datum$OAlab=="Closed Accesr"]="Closed Access"
-datum$OAlab[datum$OAlab=="Closed Access"]="Access Closed"
-datum$OAlab <- as.factor(datum$OAlab)
+datum$OAlab[datum$OAlab=="Closed Accesr"]="Closed Access" #Fix a type
+datum$OAlab[datum$OAlab=="Closed Access"]="Access Closed" #Rename category to permanently change reference
+datum$OAlab <- as.factor(datum$OAlab) #convert Access to a factor
 
 #set.seed(123)
 #randomVector=seq(1:length(datum$OAlab))
@@ -219,7 +220,7 @@ for(i in 1:length(datum$citations)){
   if(datum$OAlab[i]=="Access Closed"){datum$Closed[i]=1}
 }
 
-
+### Number of articles by access type
 Table1=datum %>% group_by(field) %>%
   summarise(NumberofJournals=length(unique(jour)),
             NumberofArticles=length(citations),
@@ -389,12 +390,12 @@ x_Scaled=(x-mean(datum$auth_count,na.rm=TRUE))/sd(datum$auth_count,na.rm=TRUE)
 emmip(mod2.2.1.int,OAlab~auth_count_scaled,
       at=list(auth_count_scaled=x_Scaled),
       CIs=TRUE,level=0.95,position="jitter",type="response")
-      +theme_classic()
+      
 AuthInt=emmip(mod2.2.1.int,OAlab~auth_count_scaled,
       at=list(auth_count_scaled=x_Scaled),
       CIs=TRUE,level=0.95,type="response",
       plotit=FALSE)
-ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
+Authorplot=ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
                    x=auth_count_scaled,y=yvar,
                    ymin=LCL,ymax=UCL))+
       geom_line()+
@@ -402,12 +403,11 @@ ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
       labs(y="Citations",x="Authors")+
       theme_classic()+
       scale_x_continuous(labels=x,
-                      breaks=x_Scaled)+
-      labs(title="Relationship between authors, access type, and citations")+
+                      breaks=x_Scaled)#+labs(title="Relationship between authors, access type, and citations")+
       scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
       scale_shape_manual(values=c(15:18))+
         theme(plot.title=element_text(hjust=0.5))+
-      theme(legend.position=c(0.15,0.8))  
+      theme(legend.position=c(0.15,1))  
         
 
 
@@ -445,26 +445,31 @@ levels(datum$OAlab)
 
 #m_auth_count=mean(datum$auth_count_scaled, na.rm=TRUE)
 #sd_auth_count=sd(datum$auth_count_scaled,na.rm=TRUE)
-x=c(1,2,4,8,16,32,64,128,256,540)
+#Authx=c(1,2,4,8,16,32,64,128,256,540)
+Authx=c(1,2,4,8,16,32,64) # Truncate data due to small sample sizes at large values
 AuthCatInt=emmip(mod2.2.1.int.auth,OAlab~AuthCat,
               CIs=TRUE,level=0.95,type="response",
               at=list(JCR_quart="2",year="2014",AIS_scaled=2),
               plotit=FALSE)
-AuthCatOrder=c("1","2","4","8","16","32","64","128","256","540")
+#AuthCatOrder=c("1","2","4","8","16","32","64","128","256","540")
+AuthCatOrder=c("1","2","4","8","16","32","64")
 
-ggplot(AuthCatInt,aes(color=OAlab,fill=OAlab,
+Authorplot=ggplot(AuthCatInt,aes(color=OAlab,fill=OAlab,
                    x=as.numeric(factor(AuthCat,level=AuthCatOrder)),y=yvar,
                    ymin=LCL,ymax=UCL))+
   geom_line()+
+  ylim(0,200)+
   geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.2))+
   labs(y="Citations",x="Authors")+
   theme_classic()+
-  scale_x_continuous(labels=x,breaks=1:10)+
-  labs(title="Relationship between authors, access type, and citations")+
-  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
-  scale_shape_manual(values=c(15:18))+
-  theme(plot.title=element_text(hjust=0.5))+
-  theme(legend.position=c(0.15,0.8))
+  scale_x_continuous(labels=Authx,breaks=1:7)+
+  labs(color="Access Type",fill="Access Type")+#title="Results of Analysis of Full Dataset")+
+  scale_color_manual(values=c("#000000","#b08d57","#009E73","#E69F00"),
+                     name="Access Type")+
+  scale_shape_manual(values=c(15:18),name="Access Type")+
+  theme(plot.title=element_text(hjust=1.5))+
+  theme(legend.position=c(0.25,0.65))
+Authorplot
 
 
 #emmeans(mod2.2.1.int.auth,pairwise~OAlab|AuthCat)
@@ -488,18 +493,21 @@ pairs(compAuthCat,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonfer
 JCRInt=emmip(mod2.2.1.int.auth,OAlab~JCR_quart,type="response",
      CIs=TRUE,level=0.95,plotit=FALSE,
      at=list(AuthCat="1",year="2014",AIS_scaled=2))
-ggplot(JCRInt,aes(color=OAlab,fill=OAlab,
+JCRPlot=ggplot(JCRInt,aes(color=OAlab,fill=OAlab,
                   x=as.numeric(JCR_quart),y=yvar,ymin=LCL,
                   ymax=UCL))+
-  geom_line()+
-  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.2))+
+  geom_line(show.legend=FALSE)+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.2),show.legend = FALSE)+
   labs(y="Citations",x="JCR Quartile")+
   theme_classic()+
-  labs(title="Relationship between JCR quartile, access type, and citations")+
-  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
-  scale_shape_manual(values=c(15:18))+
-  theme(plot.title=element_text(hjust=0.5))+
-  theme(legend.position=c(0.8,0.8))
+  #labs(color="Access Type",fill="Access Type")+#title="Relationship between JCR quartile, access type, and citations"
+  scale_color_manual(values=c("#000000","#b08d57","#009E73","#E69F00"),
+                     name="Access Type")+
+  scale_shape_manual(values=c(15:18),
+                     name="Access Type")#+theme(plot.title=element_text(hjust=0.5))
+  #+theme(legend.position=c(0.8,0.8))
+
+JCRPlot
 
 compJCR=emmeans(mod2.2.1.int.auth,"OAlab",by="JCR_quart",
                 at=list(AuthCat="1",year="2014",AIS_scaled=2))
@@ -512,22 +520,26 @@ emtrends(mod2.2.1.int,pairwise~OAlab,var="AIS_scaled")
 emmip(mod2.2.1.int,OAlab~AIS_scaled,cov.reduce=range,at=list(auth_count_scaled=c(0)),CIs=TRUE,level=0.95,
       position="jitter")
 AIS_range=c(0,0.5,1.0,1.5,2.0,2.5)
-AISInt=emmip(mod2.2.1.int,OAlab~AIS_scaled,
+#AISx=AIS_range*sd(datum$AIS)+mean(datum$AIS)
+AISInt=emmip(mod2.2.1.int.auth,OAlab~AIS_scaled,
               at=list(AIS_scaled=AIS_range, AuthCat="1",year="2014",JCR_quart="2"),
               CIs=TRUE,level=0.95,type="response",
               plotit=FALSE)
-ggplot(AISInt,aes(color=OAlab,fill=OAlab,
+AISPlot=ggplot(AISInt,aes(color=OAlab,fill=OAlab,
                    x=AIS_scaled,y=yvar,
                    ymin=LCL,ymax=UCL))+
-  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1))+
-  geom_line()+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1),
+                  show.legend = FALSE)+
+  geom_line(show.legend = FALSE)+
   labs(y="Citations",x="AIS (Scaled)")+
-  theme_classic()+
-  labs(title="Relationship between AIS, access type, and citations")+
-  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
-  scale_shape_manual(values=c(15:18))+
-  theme(plot.title=element_text(hjust=0.5))+
-  theme(legend.position=c(0.15,0.8))
+  theme_classic()+#scale_x_continuous(labels=AISx,
+                     #breaks=AIS_range)+
+  labs(color="Access Type",fill="Access Type")+#title="Relationship between AIS, access type, and citations"
+  scale_color_manual(values=c("#000000","#b08d57","#009E73","#E69F00"),
+                     name="Access Type")+
+  scale_shape_manual(values=c(15:18),
+                     name="Access Type")+
+  theme(plot.title=element_text(hjust=0.5))#+theme(legend.position=c(0.15,0.8))
 
 compAIS=emmeans(mod2.2.1.int.auth,"OAlab",by="AIS_scaled",
                 at=list(AuthCat="1",year="2014",JCR_quart="2",AIS_scaled=AIS_range))
@@ -580,24 +592,27 @@ pairs(compAIS,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonferroni
 #resultsYearInt=emmeans(mod2.2.1.int,~OAlab*year,type="response")
 #resultsYearInt
 #plot(resultsYearInt)
-x=c(2013,2014,2015,2016,2017,2018)
+Yearx=c(2013,2014,2015,2016,2017,2018)
 YearInt=emmip(mod2.2.1.int.auth,OAlab~year,
               type="response",CIs=TRUE,level=0.95,
               plotit=FALSE,
               at=list(AuthCat="1",JCR_quart="2",AIS_scaled=2))
-ggplot(YearInt,aes(color=OAlab,fill=OAlab,
+YearPlot=ggplot(YearInt,aes(color=OAlab,fill=OAlab,
                   x=as.numeric(year),y=yvar,
                   ymin=LCL,ymax=UCL))+
-  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1))+
-  geom_line()+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1),
+                  show.legend = FALSE)+
+  geom_line(show.legend = FALSE)+
   labs(y="Citations",x="Year")+
   theme_classic()+
-  labs(title="Relationship between year, access type, and citations")+
-  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
-  scale_shape_manual(values=c(15:18))+
+  labs(color="Access Type",fill="Access Type")+#title="Relationship between year, access type, and citations"
+  scale_color_manual(values=c("#000000","#b08d57","#009E73","#E69F00"),
+                     name="Access Type")+
+  scale_shape_manual(values=c(15:18),
+                     name="Access Type")+
   theme(plot.title=element_text(hjust=0.5))+
-  theme(legend.position=c(0.8,0.8))+
-  scale_x_continuous(labels=x,breaks=1:6)
+  #theme(legend.position=c(0.8,0.8))+
+  scale_x_continuous(labels=Yearx,breaks=1:6)
  
 
 compYear=emmeans(mod2.2.1.int.auth,"OAlab",by="year",
@@ -607,7 +622,9 @@ pairs(compYear,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonferron
 
 
 
-
+ggarrange(Authorplot,JCRPlot,AISPlot,YearPlot,
+          labels=c("A","B","C","D"),
+          ncol=2,nrow=2, label.x=0.2, label.y=0.95)
 
 ###
 

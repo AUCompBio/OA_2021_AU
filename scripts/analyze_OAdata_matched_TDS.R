@@ -267,29 +267,102 @@ Anova(results4)
 
 ####Author Count
 
-x=c(1,2,4,8,16,32)
-x_Scaled=(x-mean(datumMatch$auth_count,na.rm=TRUE))/sd(datum$auth_count,na.rm=TRUE)
+Authx=c(1,2,4,8,16,32,64)
+x_Scaled=(Authx-mean(datumMatch$auth_count,na.rm=TRUE))/sd(datum$auth_count,na.rm=TRUE)
 #emmip(mod2.2.1.int,OAlab~auth_count_scaled,
 #      at=list(auth_count_scaled=x_Scaled),
 #      CIs=TRUE,level=0.95,position="jitter",type="response")
 #
 AuthInt=emmip(results3,OAlab~auth_count_scaled,
-              at=list(auth_count_scaled=x_Scaled),
+              at=list(JCR_quart="2",year="2014",AIS_scaled=2,
+                      auth_count_scaled=x_Scaled),
               CIs=TRUE,level=0.95,type="response",
               plotit=FALSE)
-ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
+Authplot=ggplot(AuthInt,aes(color=OAlab,fill=OAlab,
                    x=auth_count_scaled,y=yvar,
                    ymin=LCL,ymax=UCL))+
   geom_line()+
   geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1))+
   labs(y="Citations",x="Authors")+
   theme_classic()+
-  scale_x_continuous(labels=x,
+  scale_x_continuous(labels=Authx,
                      breaks=x_Scaled)+
-  labs(title="Relationship between authors, access type, and citations")+
+  labs(color="Access Type",fill="Access Type")+
+  #labs(title="Relationship between authors, access type, and citations")+
+  scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700")
+                     ,name="Access Type")+
+  scale_shape_manual(values=c(15:18),name="Access Type")+
+  theme(plot.title=element_text(hjust=0.5))+
+  theme(legend.position=c(0.25,0.65))  
+Authplot
+
+
+compAuth=emmeans(results3,"OAlab",by="auth_count_scaled",
+                    at=list(JCR_quart="2",year="2014",AIS_scaled=2,
+                            auth_count_scaled=x_Scaled))
+pairs(compAuth,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonferroni")
+
+
+
+####Interaction between JCR quartile and access
+
+JCRInt=emmip(results3,OAlab~JCR_quart,type="response",
+             CIs=TRUE,level=0.95,plotit=FALSE,
+             at=list(auth_count_scaled=-0.9496011,year="2014",AIS_scaled=2))
+JCRPlot=ggplot(JCRInt,aes(color=OAlab,fill=OAlab,
+                  x=as.numeric(JCR_quart),y=yvar,ymin=LCL,
+                  ymax=UCL))+
+  geom_line(show.legend=FALSE)+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.2),
+                  show.legend=FALSE)+
+  labs(y="Citations",x="JCR Quartile")+
+  theme_classic()+
+  #labs(title="Relationship between JCR quartile, access type, and citations")+
   scale_color_manual(values=c("#000000","#E69F00","#009E73","#FFD700"))+
   scale_shape_manual(values=c(15:18))+
   theme(plot.title=element_text(hjust=0.5))+
-  theme(legend.position=c(0.15,0.8))  
+  theme(legend.position=c(0.8,0.8))
+JCRPlot
+
+compJCR=emmeans(results3,"OAlab",by="JCR_quart",
+                at=list(auth_count_scaled=-0.9496011,year="2014",AIS_scaled=2))
+pairs(compJCR,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonferroni")
 
 
+
+#Interaction between AIS_scaled and access
+#hist(datum$AIS_scaled)
+#emtrends(mod2.2.1.int,pairwise~OAlab,var="AIS_scaled")
+#emmip(mod2.2.1.int,OAlab~AIS_scaled,cov.reduce=range,at=list(auth_count_scaled=c(0)),CIs=TRUE,level=0.95,
+#      position="jitter")
+AIS_range=c(0,0.5,1.0,1.5,2.0,2.5)
+AISInt=emmip(results3,OAlab~AIS_scaled,
+             at=list(AIS_scaled=AIS_range, year="2014",JCR_quart="2",
+                     auth_count_scaled=-0.9496011),
+             CIs=TRUE,level=0.95,type="response",
+             plotit=FALSE)
+AISPlot=ggplot(AISInt,aes(color=OAlab,fill=OAlab,
+                  x=AIS_scaled,y=yvar,
+                  ymin=LCL,ymax=UCL))+
+  geom_pointrange(aes(shape=OAlab),position=position_dodge(width=0.1),
+                  show.legend=FALSE)+
+  geom_line(show.legend=FALSE)+
+  labs(y="Citations",x="AIS (Scaled)")+
+  theme_classic()+
+  #labs(title="Relationship between AIS, access type, and citations")+
+  scale_color_manual(values=c("#000000","#E69F00"))+
+  scale_shape_manual(values=c(15:18))+
+  theme(plot.title=element_text(hjust=0.5))+
+  theme(legend.position=c(0.15,0.8))
+AISPlot
+
+compAIS=emmeans(results3,"OAlab",by="AIS_scaled",
+                at=list(year="2014",JCR_quart="2",AIS_scaled=AIS_range,
+                        auth_count_scaled=-0.9496011))
+pairs(compAIS,reverse=TRUE,infer=c(TRUE,TRUE),type="response",adjust="bonferroni")
+
+
+
+ggarrange(Authplot,JCRPlot,AISPlot,
+          labels=c("A","B","C"),
+          ncol=2,nrow=2, label.x=0.2, label.y=0.95)
