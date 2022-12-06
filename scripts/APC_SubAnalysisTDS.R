@@ -14,7 +14,7 @@ library(car)
 
 ### import Data
 
-setwd("C:/Users/tds0009/Documents/GitHub/OA_2021_AU/")
+#setwd("C:/Users/")
 datumAPC=read.csv("data/OA_data_othergoldONLY.csv")
 #view(datumAPC)
 

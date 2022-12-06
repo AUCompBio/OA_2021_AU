@@ -50,8 +50,8 @@ library(emmeans)
 library(lmtest)
 
 #May need to set working directory first
-#setwd("C:/Users/tds0009/Documents/GitHub/OA_2021_AU")
-#setwd("C:/Users/tds0009/OneDrive - Auburn University/Student Research/Amanda Clark")
+#setwd("C:/Users/")
+#setwd("C:/Users/")
 datum <- read_csv("data/OA_data_fin.csv", col_names = TRUE)
 #'jour' is journal
 #'citations' is number of citations (y-variable)

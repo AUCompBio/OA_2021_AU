@@ -1,4 +1,4 @@
-setwd("C:/Users/tds0009/Documents/GitHub/OA_2021_AU/")
+#setwd("C:/Users")
 datum=read.csv("data/OA_data_othergoldONLY.csv")
 head(datum)
 
