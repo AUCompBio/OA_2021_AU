@@ -1,5 +1,7 @@
 # A comparison of the benefits of open-access publishing across various sub-fields in Biology
 
+[![DOI](https://zenodo.org/badge/367076215.svg)](https://zenodo.org/badge/latestdoi/367076215)
+
 As an extension of a class project, we investigated the benefits of open-access (OA) publishing across different hybrid access journals in Biology. We selected 152 journals across 12 sub-fields totalling nearly 150k articles. We download citation information directly from Web of Science and merged this with meta-data compiled on each targeted journal.
 
 Abstract
